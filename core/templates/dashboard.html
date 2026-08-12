@@ -1,0 +1,3962 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureHome — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4">
+</script>
+    <style>
+        :root {
+            --bg: #1b1c24;
+            --surface: #242631;
+            --surface2: #2f3242;
+            --surface-glass: rgba(36, 38, 49, 0.85);
+            --border: #3b3f5c;
+            --border-light: #2d3042;
+            --text: #e0e6ed;
+            --text2: #b0b5c1;
+            --text3: #888ea8;
+            --accent: #6f58f5;
+            --accent-hover: #5d46e3;
+            --accent-dark: #4b35ca;
+            --accent-light: rgba(111, 88, 245, 0.15);
+            --accent-lighter: rgba(111, 88, 245, 0.05);
+            --green: #00d285;
+            --green-bg: rgba(0, 210, 133, 0.1);
+            --green-border: rgba(0, 210, 133, 0.2);
+            --red: #f4516c;
+            --red-bg: rgba(244, 81, 108, 0.1);
+            --red-border: rgba(244, 81, 108, 0.2);
+            --orange: #f88c24;
+            --orange-bg: rgba(248, 140, 36, 0.1);
+            --orange-border: rgba(248, 140, 36, 0.2);
+            --blue: #3b82f6;
+            --blue-bg: rgba(59, 130, 246, 0.1);
+            --blue-border: rgba(59, 130, 246, 0.2);
+            --radius: 10px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+            --transition: 0.15s ease;
+            --dashboard-padding: 48px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.005em;
+            position: relative;
+        }
+
+        /* ── Subtle Background ── */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-pattern::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: none;
+        }
+
+        .bg-pattern::after {
+            content: '';
+            position: absolute;
+            display: none;
+        }
+
+        /* ── Auth Screen ── */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .auth-overlay::before {
+            display: none;
+        }
+
+        .auth-overlay::after {
+            display: none;
+        }
+
+        @keyframes floatOrb {
+
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(30px, -20px);
+            }
+        }
+
+        .auth-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 48px 40px;
+            width: 400px;
+            max-width: 90vw;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            animation: authCardIn 0.4s ease both;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes authCardIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .auth-card h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -.02em;
+        }
+
+        .auth-card h1 span {
+            color: var(--text);
+        }
+
+        .auth-card .subtitle {
+            color: var(--text3);
+            margin-bottom: 32px;
+            font-size: 0.85rem;
+            letter-spacing: 0;
+            text-transform: none;
+            font-weight: 400;
+            display: block;
+        }
+
+        .auth-card .logo {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+
+        /* ── Layout ── */
+        .app {
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .topbar {
+            background: var(--surface-glass);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 28px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .topbar-brand-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .topbar-brand-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .topbar-brand-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.03em;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-right .user-info {
+            color: var(--text2);
+            font-size: .82rem;
+            font-weight: 500;
+        }
+
+        .topbar-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--border);
+        }
+
+        .badge {
+            background: var(--red);
+            color: #fff;
+            font-size: .68rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 99px;
+            min-width: 20px;
+            text-align: center;
+            line-height: 1;
+            letter-spacing: 0.02em;
+        }
+
+        .main {
+            display: flex;
+            height: calc(100vh - 60px);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px;
+            background: var(--surface);
+            border-right: 1px solid var(--border-light);
+            flex-shrink: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-scroll {
+            overflow-y: auto;
+            padding: 12px 0;
+            flex: 1;
+        }
+
+        .nav-section-label {
+            padding: 20px 20px 8px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: var(--text3);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .nav-section-label:first-child {
+            padding-top: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            margin: 1px 10px;
+            color: var(--text2);
+            cursor: pointer;
+            font-size: 0.84rem;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 10px;
+            position: relative;
+            letter-spacing: 0.005em;
+        }
+
+        .nav-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--surface2);
+        }
+
+        .nav-item-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--text2);
+            fill: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item-text {
+            flex: 1;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .nav-item:hover .nav-item-icon {
+            background: var(--surface);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+        }
+
+        .nav-item:hover .nav-item-icon svg {
+            stroke: var(--text);
+        }
+
+        .nav-item.active {
+            color: var(--text);
+            background: var(--surface2);
+            font-weight: 600;
+        }
+
+        .nav-item.active .nav-item-icon {
+            background: var(--accent);
+        }
+
+        .nav-item.active .nav-item-icon svg {
+            stroke: #fff;
+        }
+
+        .nav-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 10px 20px;
+        }
+
+        /* ── Content ── */
+        .content {
+            flex: 1;
+            padding: 32px var(--dashboard-padding);
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .page {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .page.active {
+            display: block;
+            animation: pageIn 0.35s ease both;
+        }
+
+        @keyframes pageIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .page-header h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            border: none;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, #2dd4bf, #0f766e);
+        }
+
+        .stat-card.blue {
+            background: linear-gradient(135deg, #818cf8, #4f46e5);
+        }
+
+        .stat-card.orange {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+        }
+
+        .stat-card.red {
+            background: linear-gradient(135deg, #fb7185, #e11d48);
+        }
+
+        .stat-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition);
+            backdrop-filter: blur(4px);
+        }
+
+        .stat-card-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: #fff !important;
+            stroke-width: 1.8;
+            fill: none;
+        }
+
+        .stat-card:hover .stat-card-icon {
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-card-info {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-card .label {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.8rem;
+            text-transform: none;
+            letter-spacing: 0;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.1;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .stat-card .sub {
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        /* ── Security Mode Panel ── */
+        .mode-panel {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 24px 28px 28px;
+            margin-bottom: 28px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-panel h3 {
+            font-size: 0.68rem;
+            margin-bottom: 18px;
+            color: var(--text3);
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-panel h3 svg {
+            width: 15px;
+            height: 15px;
+            opacity: 0.45;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            flex: 1;
+            min-width: 160px;
+            padding: 22px 18px 20px;
+            border-radius: 14px;
+            border: 1.5px solid var(--border-light);
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            text-align: center;
+            transition: all var(--transition);
+            font-size: 0.95rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--border);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            background: var(--surface);
+        }
+
+        .mode-btn.active-armed {
+            border-color: var(--red);
+            background: #fff;
+            color: var(--red);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active-armed::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: modePulse 2s ease infinite;
+        }
+
+        @keyframes modePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .mode-btn.active-home {
+            border-color: var(--orange);
+            background: #fff;
+            color: var(--orange);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active-home::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            animation: modePulse 2s ease infinite;
+        }
+
+        .mode-btn.active-disarmed {
+            border-color: var(--green);
+            background: #fff;
+            color: var(--green);
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active-disarmed::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+        }
+
+        .mode-btn .mode-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            transition: all var(--transition);
+        }
+
+        .mode-btn .mode-icon svg {
+            stroke: var(--text3);
+            transition: all var(--transition);
+        }
+
+        .mode-btn:hover .mode-icon {
+            background: var(--surface);
+            border-color: var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .mode-btn:hover .mode-icon svg {
+            stroke: var(--text2);
+        }
+
+        .mode-btn.active-armed .mode-icon {
+            background: var(--red);
+            border-color: var(--red);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+        }
+
+        .mode-btn.active-armed .mode-icon svg {
+            stroke: #fff;
+        }
+
+        .mode-btn.active-home .mode-icon {
+            background: var(--orange);
+            border-color: var(--orange);
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+        }
+
+        .mode-btn.active-home .mode-icon svg {
+            stroke: #fff;
+        }
+
+        .mode-btn.active-disarmed .mode-icon {
+            background: var(--green);
+            border-color: var(--green);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
+        }
+
+        .mode-btn.active-disarmed .mode-icon svg {
+            stroke: #fff;
+        }
+
+        .mode-btn .mode-label {
+            font-weight: 700;
+            font-size: 0.92rem;
+            display: block;
+            letter-spacing: 0.01em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mode-btn .mode-desc {
+            font-size: 0.74rem;
+            color: var(--text3);
+            margin-top: 6px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        /* ── Tables ── */
+        .table-card {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+        }
+
+        .table-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .table-card .card-header {
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface2);
+        }
+
+        .table-card .card-header h3 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 11px 24px;
+            color: var(--text3);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid var(--border-light);
+            font-weight: 600;
+            background: var(--surface2);
+        }
+
+        td {
+            padding: 13px 24px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.85rem;
+            color: var(--text);
+            transition: background var(--transition);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background var(--transition);
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 0, 0, 0.02);
+            cursor: pointer;
+        }
+
+        tbody tr:hover td {
+            color: var(--text);
+        }
+
+        /* ── Badges ── */
+        .pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .pill-family {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .pill-stranger {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+        }
+
+        .pill-unknown {
+            background: var(--orange-bg);
+            color: var(--orange);
+            border: 1px solid var(--orange-border);
+        }
+
+        .pill-low {
+            background: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }
+
+        .pill-medium {
+            background: var(--orange-bg);
+            color: var(--orange);
+            border: 1px solid var(--orange-border);
+        }
+
+        .pill-high {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+        }
+
+        .pill-critical {
+            background: var(--red);
+            color: var(--surface);
+        }
+
+        .pill-ack {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .pill-pending {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+        }
+
+        .pill-active {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }
+
+        .pill-inactive {
+            background: var(--surface2);
+            color: var(--text3);
+            border: 1px solid var(--border-light);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-success {
+            background: var(--green);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text2);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--text);
+            color: var(--text);
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .btn-sm {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+            border-radius: 8px;
+        }
+
+        /* ── Forms ── */
+        .input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.88rem;
+            outline: none;
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .input:focus {
+            border-color: #111;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .input::placeholder {
+            color: var(--text3);
+        }
+
+        select.input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.72rem;
+            color: var(--text2);
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Persons Grid ── */
+        .persons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 20px;
+        }
+
+        .person-card {
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            overflow: hidden;
+            text-align: center;
+            transition: all var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .person-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
+        }
+
+        .person-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: var(--surface2);
+        }
+
+        .person-card .info {
+            padding: 18px;
+        }
+
+        .person-card .info h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .person-card .info p {
+            font-size: 0.8rem;
+            color: var(--text3);
+        }
+
+        /* ── Upload ── */
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            color: var(--text3);
+            background: var(--surface2);
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-lighter);
+        }
+
+        .drop-zone .dz-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ── Alerts ── */
+        .alert-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .alert-row:hover {
+            background: var(--accent-lighter);
+        }
+
+        .alert-row:last-child {
+            border-bottom: none;
+        }
+
+        .alert-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .alert-body {
+            flex: 1;
+        }
+
+        .alert-body .title {
+            font-weight: 600;
+            font-size: .88rem;
+            margin-bottom: 3px;
+            color: var(--text);
+        }
+
+        .alert-body .msg {
+            font-size: .8rem;
+            color: var(--text2);
+            line-height: 1.4;
+        }
+
+        .alert-body .time {
+            font-size: .72rem;
+            color: var(--text3);
+            margin-top: 5px;
+        }
+
+        /* ── Misc ── */
+        .empty {
+            text-align: center;
+            padding: 56px 20px;
+            color: var(--text3);
+        }
+
+        .empty .empty-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: .4;
+        }
+
+        .empty p {
+            font-size: .85rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text3);
+            font-size: .85rem;
+        }
+
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .gap-8 {
+            gap: 8px;
+        }
+
+        .mt-16 {
+            margin-top: 16px;
+        }
+
+        .mb-16 {
+            margin-bottom: 16px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 14px 22px;
+            z-index: 9999;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--green);
+            background: #f0fdf4;
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--red);
+            background: #fef2f2;
+        }
+
+        /* ── Image Preview Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 20px;
+            padding: 0;
+            max-width: 800px;
+            width: 90vw;
+            max-height: 90vh;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 16px 48px -8px rgba(15, 23, 42, 0.18);
+            animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .modal-header h3 {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: var(--surface2);
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text2);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all var(--transition);
+        }
+
+        .modal-close:hover {
+            background: var(--text);
+            color: var(--surface);
+        }
+
+        .modal-body {
+            padding: 32px;
+            max-height: calc(90vh - 88px);
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .modal-body img {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text3);
+        }
+
+        /* ── Chart Period Buttons ── */
+        .chart-period-group {
+            display: flex;
+            gap: 0;
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 3px;
+            border: 1px solid var(--border);
+        }
+
+        .chart-period-btn {
+            background: transparent;
+            color: var(--text3);
+            border: none;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-period-btn:hover {
+            color: var(--text);
+        }
+
+        .chart-period-btn.active-period {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(111, 88, 245, 0.35);
+        }
+
+        /* ── Chart Legend ── */
+        .chart-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            margin-top: 16px;
+        }
+
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text3);
+            font-weight: 500;
+        }
+
+        .chart-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        /* ── Chart Summary Cards ── */
+        .chart-summary-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding: 0 24px 22px;
+        }
+
+        .chart-summary-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            border-radius: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border-light);
+        }
+
+        .chart-summary-card.stranger {
+            border-left: 3px solid var(--red);
+        }
+
+        .chart-summary-card.family {
+            border-left: 3px solid var(--green);
+        }
+
+        .chart-summary-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .chart-summary-card.stranger .chart-summary-icon {
+            background: rgba(244, 81, 108, 0.12);
+            color: var(--red);
+        }
+
+        .chart-summary-card.family .chart-summary-icon {
+            background: rgba(0, 210, 133, 0.12);
+            color: var(--green);
+        }
+
+        .chart-summary-label {
+            font-size: 0.75rem;
+            color: var(--text3);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .chart-summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.2;
+        }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .sidebar-scroll {
+                height: auto;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .mode-buttons {
+                flex-direction: column;
+            }
+
+            .content {
+                padding: 20px 16px;
+            }
+
+            .auth-card {
+                padding: 32px 24px;
+                width: 100%;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .page-header h2 {
+                font-size: 1.2rem;
+            }
+
+            th,
+            td {
+                padding: 10px 16px;
+                font-size: 0.82rem;
+            }
+        }
+
+        @media(max-width:480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════
+           OVERVIEW PAGE — Clean Gradient, No Shadows
+           ═══════════════════════════════════════════════ */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .overview-left {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .overview-right {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Quick Stats Bar */
+        .quick-stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .quick-stat {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 14px;
+            padding: 16px 10px;
+            text-align: center;
+            transition: border-color 0.2s ease;
+        }
+
+        .quick-stat:hover {
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        .quick-stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            line-height: 1.2;
+            margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .quick-stat-label {
+            font-size: 0.65rem;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* Stream Card */
+        .stream-card {
+            background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stream-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            letter-spacing: 0.02em;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: livePulse 2s ease infinite;
+            display: inline-block;
+        }
+
+        @keyframes livePulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .stream-device {
+            margin-left: auto;
+            font-size: 0.74rem;
+            color: #94a3b8;
+            font-weight: 500;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .stream-body {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 260px;
+        }
+
+        .stream-body img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .stream-body img.active {
+            display: block;
+        }
+
+        .stream-placeholder {
+            color: #475569;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Compact Mode Buttons */
+        .mode-compact {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .mode-compact-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            letter-spacing: 0.01em;
+        }
+
+        .mode-compact-btn:hover {
+            border-color: rgba(148, 163, 184, 0.25);
+            color: #e2e8f0;
+        }
+
+        .mode-compact-btn.active {
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .mode-compact-btn.active-armed {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+        }
+
+        .mode-compact-btn.active-home {
+            background: linear-gradient(135deg, #92400e 0%, #f59e0b 100%);
+        }
+
+        .mode-compact-btn.active-disarmed {
+            background: linear-gradient(135deg, #064e3b 0%, #10b981 100%);
+        }
+
+        .mode-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.5;
+        }
+
+        .mode-compact-btn.active .mode-dot {
+            opacity: 1;
+        }
+
+        /* Compact Cards */
+        .compact-card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .compact-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+        }
+
+        .compact-card-header h3 {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .compact-badge {
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Entries List */
+        .entries-list {
+            padding: 4px 0;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .entry-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+            transition: background 0.15s ease;
+        }
+
+        .entry-row:last-child {
+            border-bottom: none;
+        }
+
+        .entry-row:hover {
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        .entry-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #94a3b8;
+            flex-shrink: 0;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .entry-avatar.family {
+            background: linear-gradient(135deg, #064e3b 0%, #10b981 100%);
+            color: #fff;
+        }
+
+        .entry-avatar.stranger {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
+            color: #fff;
+        }
+
+        .entry-avatar.unknown {
+            background: linear-gradient(135deg, #92400e 0%, #f59e0b 100%);
+            color: #fff;
+        }
+
+        .entry-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry-name {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entry-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .entry-time {
+            font-size: 0.72rem;
+            color: #475569;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .chart-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-wrap {
+            padding: 10px 12px 14px;
+            height: 170px;
+            position: relative;
+        }
+
+        .chart-card-prominent {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-wrap-prominent {
+            padding: 14px 18px 18px;
+            height: 240px;
+            position: relative;
+        }
+
+        .chart-legend-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stream-body {
+                aspect-ratio: 16/9;
+                max-height: 420px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .quick-stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-pattern"></div>
+
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <div
+                style="background:var(--text); color:var(--surface); width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem; margin: 0 auto 20px;">
+                SH</div>
+            <h1>SecureHome</h1>
+            <p class="subtitle">Enter your credentials to continue</p>
+            <div class="form-group">
+                <label>Username</label>
+                <input class="input" id="loginUser" placeholder="Enter username" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input class="input" id="loginPass" type="password" placeholder="Enter password"
+                    autocomplete="current-password">
+            </div>
+            <button class="btn btn-primary" style="width:100%;padding:12px;" onclick="doLogin()">Sign In</button>
+            <div id="loginError"
+                style="color:var(--red);font-size:.82rem;text-align:center;margin-top:12px;display:none;"></div>
+        </div>
+    </div>
+
+    <div class="app" id="app">
+
+        <div class="topbar">
+            <div class="topbar-brand">
+                <div class="topbar-brand-icon"><svg viewBox="0 0 24 24">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg></div>
+                <div class="topbar-brand-text">SecureHome</div>
+            </div>
+            <div class="topbar-right">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div
+                        style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite;">
+                    </div>
+                    <span style="color:var(--text3);font-size:0.72rem;font-weight:600;">Live</span>
+                </div>
+                <div class="topbar-divider"></div>
+                <span class="user-info" id="topUser"></span>
+                <span class="badge" id="topAlertBadge" style="display:none" title="Unacknowledged alerts"></span>
+                <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="main">
+            
+            <div class="sidebar">
+                <div class="sidebar-scroll">
+                    <div class="nav-section-label">Main</div>
+                    <div class="nav-item active" data-page="overview">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                            </svg></div>
+                        <div class="nav-item-text">Overview</div>
+                    </div>
+                    <div class="nav-item" data-page="alerts">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg></div>
+                        <div class="nav-item-text">Alerts <span class="badge" id="sideAlertBadge"
+                                style="display:none;margin-left:6px;"></span></div>
+                    </div>
+                    <div class="nav-item" data-page="events">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                            </svg></div>
+                        <div class="nav-item-text">Events</div>
+                    </div>
+                    <div class="nav-item" data-page="devices">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" />
+                                <line x1="8" y1="21" x2="16" y2="21" />
+                                <line x1="12" y1="17" x2="12" y2="21" />
+                            </svg></div>
+                        <div class="nav-item-text">Devices</div>
+                    </div>
+                    <div class="nav-divider"></div>
+                    <div class="nav-section-label">Management</div>
+                    <div class="nav-item" data-page="family">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg></div>
+                        <div class="nav-item-text">Family</div>
+                    </div>
+                    <div class="nav-item" data-page="arcface">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3.04A2.5 2.5 0 0 1 9.5 2z" />
+                                <path
+                                    d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3.04A2.5 2.5 0 0 0 14.5 2z" />
+                            </svg></div>
+                        <div class="nav-item-text">ArcFace Test</div>
+                    </div>
+                    <div class="nav-item" data-page="activity">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="12 8 12 12 14 14" />
+                                <circle cx="12" cy="12" r="10" />
+                            </svg></div>
+                        <div class="nav-item-text">Activity Log</div>
+                    </div>
+                    <div class="nav-item" data-page="household">
+                        <div class="nav-item-icon"><svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg></div>
+                        <div class="nav-item-text">Household</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content">
+
+                <div class="page active" id="page-overview">
+                    <div class="page-header">
+                        <h2>Security Overview</h2><span style="color:var(--text3);font-size:0.8rem;"
+                            id="overviewTime"></span>
+                    </div>
+
+                    <div class="quick-stats-bar" id="quickStatsBar">
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="qsEvents">--</div>
+                            <div class="quick-stat-label">Events Today</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="qsFamily">--</div>
+                            <div class="quick-stat-label">Family</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="qsStrangers">--</div>
+                            <div class="quick-stat-label">Strangers</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-value" id="qsAlerts">--</div>
+                            <div class="quick-stat-label">Alerts</div>
+                        </div>
+                    </div>
+
+                    <div class="overview-grid">
+                        
+                        <div class="overview-left">
+                            <div class="stream-card">
+                                <div class="stream-header">
+                                    <span class="live-dot"></span>
+                                    <span>Live Camera Feed</span>
+                                    <span id="streamDeviceName" class="stream-device">No device</span>
+                                </div>
+                                <div class="stream-body">
+                                    <img id="liveStreamImg" src="" alt="Live Stream">
+                                    <div class="stream-placeholder" id="streamPlaceholder">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#475569"
+                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" />
+                                            <polyline points="21 15 16 10 5 21" />
+                                        </svg>
+                                        <span>No active stream available</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overview-right">
+                            
+                            <div class="mode-compact">
+                                <button class="mode-compact-btn" onclick="setMode('armed')" id="modeArmedCompact">
+                                    <span class="mode-dot"></span> Armed
+                                </button>
+                                <button class="mode-compact-btn" onclick="setMode('home')" id="modeHomeCompact">
+                                    <span class="mode-dot"></span> Home
+                                </button>
+                                <button class="mode-compact-btn" onclick="setMode('disarmed')" id="modeDisarmedCompact">
+                                    <span class="mode-dot"></span> Disarmed
+                                </button>
+                            </div>
+
+                            <div class="compact-card">
+                                <div class="compact-card-header">
+                                    <h3>Recent Entries</h3>
+                                    <span class="compact-badge" id="recentEntriesCount">0</span>
+                                </div>
+                                <div id="recentEntriesList" class="entries-list">
+                                    <div class="empty" style="padding:24px;">Loading...</div>
+                                </div>
+                            </div>
+
+                            <div class="table-card" style="padding:0;">
+                                <div
+                                    style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0;flex-wrap:wrap;gap:10px;">
+                                    <h3
+                                        style="margin:0;font-size:0.95rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="var(--accent)" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <rect x="3" y="12" width="4" height="9" rx="1" />
+                                            <rect x="10" y="7" width="4" height="14" rx="1" />
+                                            <rect x="17" y="3" width="4" height="18" rx="1" />
+                                        </svg>
+                                        Stranger & Family Detections
+                                    </h3>
+                                    <div class="chart-period-group">
+                                        <button class="chart-period-btn active-period" data-period="daily"
+                                            onclick="setChartPeriod('daily')">Daily</button>
+                                        <button class="chart-period-btn" data-period="weekly"
+                                            onclick="setChartPeriod('weekly')">Weekly</button>
+                                        <button class="chart-period-btn" data-period="monthly"
+                                            onclick="setChartPeriod('monthly')">Monthly</button>
+                                    </div>
+                                </div>
+                                <div style="padding:16px 20px 0;">
+                                    <div style="position:relative;height:200px;">
+                                        <canvas id="detectionChartCanvas"></canvas>
+                                    </div>
+                                    <div class="chart-legend">
+                                        <div class="chart-legend-item">
+                                            <span class="chart-legend-dot"
+                                                style="background:var(--red);"></span>Stranger
+                                        </div>
+                                        <div class="chart-legend-item">
+                                            <span class="chart-legend-dot"
+                                                style="background:var(--green);"></span>Family
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <div class="page" id="page-alerts">
+                <div class="page-header">
+                    <h2>Alerts</h2><button class="btn btn-sm btn-success" onclick="ackAll()">Acknowledge
+                        All</button>
+                </div>
+                <div class="flex-between mb-16 gap-8">
+                    <select class="input" style="max-width:200px;" id="alertSevFilter" onchange="loadAlerts()">
+                        <option value="">All Severities</option>
+                        <option value="critical">Critical</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                    <select class="input" style="max-width:200px;" id="alertAckFilter" onchange="loadAlerts()">
+                        <option value="false">Pending</option>
+                        <option value="true">Acknowledged</option>
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="table-card">
+                    <div id="alertsList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-events">
+                <div class="page-header">
+                    <h2>Detection Events</h2>
+                </div>
+                <div class="flex-between mb-16 gap-8" style="flex-wrap:wrap;">
+                    <select class="input" style="max-width:180px;" id="eventResultFilter" onchange="loadEvents()">
+                        <option value="">All Results</option>
+                        <option value="family">Family</option>
+                        <option value="stranger">Stranger</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+                    <input class="input" style="max-width:180px;" type="date" id="eventDateFrom" onchange="loadEvents()"
+                        placeholder="From">
+                    <input class="input" style="max-width:180px;" type="date" id="eventDateTo" onchange="loadEvents()"
+                        placeholder="To">
+                </div>
+                <div class="table-card">
+                    <div id="eventsList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-devices">
+                <div class="page-header">
+                    <h2>Devices</h2><button class="btn btn-primary btn-sm" onclick="showAddDevice()">+ Add
+                        Device</button>
+                </div>
+                <div id="addDeviceForm" style="display:none;" class="table-card" style="margin-bottom:16px;">
+                    <div style="padding:20px;">
+                        <div class="form-group"><label>Device ID</label><input class="input" id="newDeviceId"
+                                placeholder="e.g. esp32-front-door"></div>
+                        <div class="form-group"><label>Name</label><input class="input" id="newDeviceName"
+                                placeholder="e.g. Front Door Cam"></div>
+                        <div class="form-group"><label>Location</label><input class="input" id="newDeviceLoc"
+                                placeholder="e.g. Main Entrance"></div>
+                        <div class="flex-between"><button class="btn btn-ghost btn-sm"
+                                onclick="hideAddDevice()">Cancel</button><button class="btn btn-primary btn-sm"
+                                onclick="addDevice()">Register Device</button></div>
+                    </div>
+                </div>
+                <div id="devicesList">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <div class="page" id="page-family">
+                <div class="page-header">
+                    <h2>Known Persons</h2>
+                </div>
+                <div class="table-card mb-16">
+                    <div style="padding:20px;">
+                        <div class="form-group"><label>Person's Name</label><input class="input" id="fpName"
+                                placeholder="e.g. Mom, Alice"></div>
+                        <div class="drop-zone" id="fpDropZone" onclick="document.getElementById('fpFileInput').click()">
+                            <div>Drop face photos or click to select (multiple allowed)</div>
+                        </div>
+                        <input type="file" id="fpFileInput" accept="image/*" multiple style="display:none;">
+                        <div id="fpPreviews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+                        <div id="fpFileCount" style="color:var(--text2);font-size:.85rem;margin-top:8px;"></div>
+                        <button class="btn btn-primary mt-16" id="fpAddBtn" style="width:100%;" disabled
+                            onclick="addPerson()">Extract Faces & Add</button>
+                        <div id="fpLoader" style="display:none;text-align:center;margin-top:12px;color:var(--accent);">
+                            Processing
+                            ArcFace...</div>
+                    </div>
+                </div>
+                <div class="persons-grid" id="personsGrid"></div>
+            </div>
+
+            <div class="page" id="page-arcface">
+                <div class="page-header">
+                    <h2>ArcFace Endpoint Tester</h2>
+                </div>
+                <div class="table-card">
+                    <div style="padding:20px;">
+                        <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px;">This calls the
+                            <b>public</b> <code>/api/v1/detect/arcface/</code> endpoint — no auth required, just
+                            like an ESP32 device.
+                        </p>
+                        <div class="drop-zone" id="afDropZone" onclick="document.getElementById('afFileInput').click()">
+                            <div>Drop an image or click to select</div>
+                        </div>
+                        <input type="file" id="afFileInput" accept="image/*" style="display:none;">
+                        <img id="afPreview"
+                            style="max-height:300px;border-radius:8px;margin-top:12px;display:none;width:100%;object-fit:contain;">
+                        <button class="btn btn-primary mt-16" id="afTestBtn" style="width:100%;" disabled
+                            onclick="testArcface()">Test Detection</button>
+                        <div id="afLoader" style="display:none;text-align:center;margin-top:12px;color:var(--accent);">
+                            Processing...</div>
+                        <pre id="afResult"
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;display:none;overflow-x:auto;font-size:.82rem;color:var(--text);white-space:pre-wrap;max-height:300px;overflow-y:auto;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-activity">
+                <div class="page-header">
+                    <h2>Activity Log</h2>
+                </div>
+                <select class="input mb-16" style="max-width:220px;" id="actFilter" onchange="loadActivity()">
+                    <option value="">All Actions</option>
+                    <option value="detection">Detection</option>
+                    <option value="alert_created">Alert Created</option>
+                    <option value="alert_ack">Alert Acknowledged</option>
+                    <option value="mode_change">Mode Change</option>
+                    <option value="person_added">Person Added</option>
+                    <option value="person_removed">Person Removed</option>
+                    <option value="device_added">Device Added</option>
+                </select>
+                <div class="table-card">
+                    <div id="activityList">
+                        <div class="loading">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-household">
+                <div class="page-header">
+                    <h2>Household</h2>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:32px; align-items: start;">
+                    <div style="display:flex; flex-direction:column; gap:24px;">
+                        <div class="table-card">
+                            <div class="card-header">
+                                <h3>Household Info</h3><button class="btn btn-sm btn-ghost"
+                                    onclick="openHouseholdModal()">Edit</button>
+                            </div>
+                            <div style="padding:32px;" id="householdInfo">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="table-card">
+                            <div class="card-header">
+                                <h3>My Profile</h3><button class="btn btn-sm btn-ghost"
+                                    onclick="openProfileModal()">Edit</button>
+                            </div>
+                            <div style="padding:32px;" id="profileInfo">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="table-card">
+                            <div class="card-header">
+                                <h3>Add Member</h3>
+                            </div>
+                            <div style="padding:24px;">
+                                <div class="form-group"><label>Member Name</label><input class="input" id="hhMemberName"
+                                        placeholder="e.g. Dad, Sister"></div>
+                                <div class="drop-zone" id="hhDropZone"
+                                    onclick="document.getElementById('hhFileInput').click()">
+                                    <div>Drop face photos or click to select (multiple allowed)</div>
+                                </div>
+                                <input type="file" id="hhFileInput" accept="image/*" multiple style="display:none;">
+                                <div id="hhPreviews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
+                                </div>
+                                <div id="hhFileCount" style="color:var(--text2);font-size:.85rem;margin-top:8px;">
+                                </div>
+                                <button class="btn btn-primary mt-16" id="hhAddBtn" style="width:100%;" disabled
+                                    onclick="addHouseholdMember()">Extract Faces & Add</button>
+                                <div id="hhLoader"
+                                    style="display:none;text-align:center;margin-top:12px;color:var(--accent);">
+                                    Processing ArcFace...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:24px;">
+                        <div class="table-card">
+                            <div class="card-header">
+                                <h3>Members</h3>
+                            </div>
+                            <div id="householdMembers" style="overflow-x: auto;">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div class="page" id="page-person-details">
+                
+                <div style="margin-bottom: 32px;">
+                    <button class="btn btn-ghost" onclick="switchPage('household')"
+                        style="padding-left: 0; font-weight: 600; color: var(--text2);">
+                        &larr; Back to Household
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 36px; align-items: stretch; margin-bottom: 44px; flex-wrap: wrap;">
+                    
+                    <div style="flex-shrink: 0; position: relative;">
+                        <img id="spAvatar" src=""
+                            style="width: 190px; height: 190px; border-radius: 20px; object-fit: cover; box-shadow: var(--shadow-lg);">
+                        <div
+                            style="position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); text-align: center;">
+                            <span
+                                style="background: var(--text); color: var(--surface); padding: 5px 14px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">FAMILY
+                                MEMBER</span>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                        <h1 id="spName"
+                            style="font-size: 3rem; font-weight: 800; color: var(--text); margin: 0 0 10px 0; font-family: 'Inter', sans-serif; line-height: 1;">
+                            Name</h1>
+                        <div
+                            style="display: flex; align-items: center; gap: 8px; color: var(--text3); margin-bottom: 28px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span style="font-size: 0.9rem;">Identity Verified via Digital Sentinel</span>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button class="btn btn-primary"
+                                style="background: var(--text2); border-radius: 24px; padding: 9px 24px;"
+                                onclick="toast('Edit details feature coming soon')">Edit Details</button>
+
+                            <button class="btn btn-ghost" id="spDeleteBtn"
+                                style="color: var(--red); border: 1px solid var(--red-border); font-weight: 600; border-radius: 24px; padding: 9px 24px;">Remove
+                                Member</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 48px;">
+                    <div
+                        style="background: var(--surface); padding: 22px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-light);">
+                        <div
+                            style="font-size: 0.7rem; color: var(--text3); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 10px;">
+                            MEMBER SINCE</div>
+                        <div id="spMemberSince"
+                            style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif;">
+                            --
+                        </div>
+                    </div>
+                    <div
+                        style="background: var(--surface); padding: 22px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-light);">
+                        <div
+                            style="font-size: 0.7rem; color: var(--text3); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 10px;">
+                            LAST ACTIVITY</div>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span id="spLastActivityTime"
+                                style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif;">--</span>
+                            <span id="spLastActivityLoc"
+                                style="font-size: 0.9rem; color: var(--text3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">--</span>
+                        </div>
+                    </div>
+                    <div
+                        style="background: var(--surface); padding: 22px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-light);">
+                        <div
+                            style="font-size: 0.7rem; color: var(--text3); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 10px;">
+                            IDENTITY SCORE</div>
+                        <div style="display: flex; align-items: baseline; gap: 8px;">
+                            <span id="spIdentityScore"
+                                style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif;">99.8%</span>
+                            <span style="font-size: 0.85rem; color: var(--green); font-weight: 600;">Confidence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 48px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; font-family: 'Inter', sans-serif;">
+                            Biometric
+                            Gallery
+                        </h3>
+                        <button class="btn btn-ghost"
+                            style="color: var(--text3); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;"
+                            onclick="document.getElementById('spNewScanInput').click()">RECALIBRATE
+                            SCAN</button>
+                        <input type="file" id="spNewScanInput" accept="image/*" multiple style="display: none;">
+                    </div>
+                    <div id="spLoader"
+                        style="display:none; color: white; background: var(--accent); padding: 10px 20px; border-radius: var(--radius-sm); margin-bottom: 20px; font-weight: 600; text-align: center;">
+                        Uploading new biometric samples...</div>
+
+                    <div id="spGalleryGrid" class="photo-grid"
+                        style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                        
+                    </div>
+                </div>
+
+                <div style="padding-bottom: 48px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3
+                            style="font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 0; font-family: 'Inter', sans-serif;">
+                            Full Event
+                            History
+                        </h3>
+                        <button class="btn btn-ghost" style="color: var(--text3); padding: 7px;" title="Export Logs">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div
+                        style="background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; border: 1px solid var(--border-light);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: var(--surface2); border-bottom: 1px solid var(--border-light);">
+                                <tr>
+                                    <th
+                                        style="padding: 14px 24px; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;">
+                                        Date & Time</th>
+                                    <th
+                                        style="padding: 14px 24px; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;">
+                                        Event Type</th>
+                                    <th
+                                        style="padding: 14px 24px; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;">
+                                        Location</th>
+                                    <th
+                                        style="padding: 14px 24px; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;">
+                                        Verification</th>
+                                    <th
+                                        style="padding: 14px 24px; font-size: 0.7rem; font-weight: 600; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase;">
+                                        Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spEventHistory">
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+        </div>
+    </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="modal-overlay" id="imageModal" onclick="closeImageModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Detection Image</h3>
+                <button class="modal-close" onclick="closeImageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="Detection">
+                <div class="modal-actions">
+                    <button class="btn btn-danger" id="modalDeleteBtn" onclick="deleteEventFromModal()">Delete
+                        Detection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="householdModal" onclick="closeModal('householdModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Edit Household</h3>
+                <button class="modal-close" onclick="closeModal('householdModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="width:100%;">
+                    <label>Household Name</label>
+                    <input class="input" id="editHName" placeholder="e.g. My Home">
+                </div>
+                <div class="form-group" style="width:100%;">
+                    <label>Address</label>
+                    <input class="input" id="editHAddress" placeholder="e.g. 123 Security St">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" onclick="closeModal('householdModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveHousehold()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal" onclick="closeModal('profileModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Edit Profile</h3>
+                <button class="modal-close" onclick="closeModal('profileModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="width:100%;">
+                    <label>First Name</label>
+                    <input class="input" id="editPFirst" placeholder="Jane">
+                </div>
+                <div class="form-group" style="width:100%;">
+                    <label>Last Name</label>
+                    <input class="input" id="editPLast" placeholder="Doe">
+                </div>
+                <div class="form-group" style="width:100%;">
+                    <label>Email</label>
+                    <input class="input" id="editPEmail" placeholder="jane@example.com">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" onclick="closeModal('profileModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editDeviceModal" onclick="closeModal('editDeviceModal', event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Edit Device</h3>
+                <button class="modal-close" onclick="closeModal('editDeviceModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editDeviceIdVal">
+                <div class="form-group" style="width:100%;">
+                    <label>Name</label>
+                    <input class="input" id="editDeviceName" placeholder="e.g. Front Door">
+                </div>
+                <div class="form-group" style="width:100%;">
+                    <label>Location</label>
+                    <input class="input" id="editDeviceLoc" placeholder="e.g. Main Entrance">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" onclick="closeModal('editDeviceModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveDeviceEdit()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .profile-info-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 24px;
+            background: var(--surface2);
+            border-radius: var(--radius);
+            margin-bottom: 28px;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: var(--shadow);
+        }
+
+        .profile-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .profile-meta h4 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .meta-item {
+            font-size: 0.85rem;
+            color: var(--text2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meta-item svg {
+            width: 15px;
+            height: 15px;
+            color: var(--text3);
+        }
+
+        .gallery-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 0 14px 0;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .photo-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .photo-card {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: var(--surface2);
+            cursor: pointer;
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition);
+        }
+
+        .photo-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.25);
+            opacity: 0;
+            transition: opacity var(--transition);
+            pointer-events: none;
+        }
+
+        .photo-card:hover::after {
+            opacity: 1;
+        }
+
+        .photo-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .photo-card .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--red);
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            font-size: 12px;
+        }
+
+        .photo-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .photo-card .delete-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .add-photo-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            aspect-ratio: 1;
+            cursor: pointer;
+            color: var(--text3);
+            transition: all var(--transition);
+            font-weight: 500;
+            font-size: 0.85rem;
+            background: transparent;
+        }
+
+        .add-photo-card:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-lighter);
+        }
+    </style>
+
+    <script>
+        let AT = localStorage.getItem('sf_at') || '';
+        let RT = localStorage.getItem('sf_rt') || '';
+        let currentUser = null;
+
+        function saveTokens(a, r) {
+            AT = a;
+            RT = r;
+            localStorage.setItem('sf_at', a);
+            localStorage.setItem('sf_rt', r);
+
+            if (document.getElementById('app').style.display === 'block' && typeof initAlertStream === 'function') {
+                initAlertStream();
+            }
+        }
+        function clearTokens() { AT = ''; RT = ''; localStorage.removeItem('sf_at'); localStorage.removeItem('sf_rt'); }
+
+        function tokenExpiryEpoch(token) {
+            try {
+                const payload = JSON.parse(atob((token || '').split('.')[1] || ''));
+                return Number(payload.exp || 0);
+            } catch (_) {
+                return 0;
+            }
+        }
+
+        function isTokenExpired(token, skewSeconds = 20) {
+            const exp = tokenExpiryEpoch(token);
+            if (!exp) return true;
+            const now = Math.floor(Date.now() / 1000);
+            return now >= (exp - skewSeconds);
+        }
+
+        async function refreshAccessToken() {
+            if (!RT) return false;
+            try {
+                const ref = await fetch('/api/v1/auth/token/refresh/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: RT })
+                });
+                if (!ref.ok) return false;
+                const d = await ref.json();
+                if (!d?.data?.access || !d?.data?.refresh) return false;
+                saveTokens(d.data.access, d.data.refresh);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        async function ensureAccessToken() {
+            if (!AT) return false;
+            if (!isTokenExpired(AT)) return true;
+            return refreshAccessToken();
+        }
+
+        async function apiFetch(url, opts = {}) {
+            const okToken = await ensureAccessToken();
+            if (!okToken) {
+                doLogout(true);
+                return null;
+            }
+
+            opts.headers = { 'Authorization': 'Bearer ' + AT, 'Content-Type': 'application/json', ...(opts.headers || {}) };
+            let res = await fetch(url, opts);
+            if (res.status === 401 && RT) {
+                const refreshed = await refreshAccessToken();
+                if (refreshed) { opts.headers['Authorization'] = 'Bearer ' + AT; res = await fetch(url, opts); }
+                else { doLogout(true); return null; }
+            }
+            return res;
+        }
+
+        async function doLogin() {
+            const u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value;
+            const el = document.getElementById('loginError');
+            if (!u || !p) { el.textContent = 'Enter username and password.'; el.style.display = 'block'; return; }
+            const res = await fetch('/api/v1/auth/login/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: u, password: p }) });
+            const d = await res.json();
+            if (res.ok) { saveTokens(d.data.tokens.access, d.data.tokens.refresh); currentUser = d.data.user; showApp(); }
+            else { el.textContent = d.message || 'Login failed'; el.style.display = 'block'; }
+        }
+
+        function doLogout(skipConfirm = false) {
+            if (!skipConfirm && !confirm('Are you sure you want to log out?')) return;
+            apiFetch('/api/v1/auth/logout/', { method: 'POST', body: JSON.stringify({ refresh: RT }) }).catch(() => { });
+            if (alertSource) {
+                alertSource.close();
+                alertSource = null;
+            }
+            clearTokens(); currentUser = null;
+            document.getElementById('authOverlay').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+
+        async function showApp() {
+            document.getElementById('authOverlay').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('topUser').textContent = (currentUser?.first_name || currentUser?.username || '');
+
+            const okToken = await ensureAccessToken();
+            if (!okToken) {
+                doLogout(true);
+                return;
+            }
+
+            initAlertStream();
+
+            const navTo = localStorage.getItem('sf_nav');
+            if (navTo) {
+                localStorage.removeItem('sf_nav');
+                const navItem = document.querySelector('.nav-item[data-page="' + navTo + '"]');
+                if (navItem) { navItem.click(); return; }
+            }
+            loadDashboard();
+        }
+
+        let alertSource = null;
+        async function initAlertStream() {
+            if (alertSource) alertSource.close();
+            if (!window.EventSource) return;
+
+            const okToken = await ensureAccessToken();
+            if (!okToken) {
+                doLogout(true);
+                return;
+            }
+
+            if (Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+
+            alertSource = new EventSource('/api/v1/alerts/stream/?token=' + encodeURIComponent(AT));
+
+            alertSource.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+
+                    toast(`🚨 ${data.title}`, 'error');
+
+                    if (Notification.permission === 'granted') {
+                        new Notification("Security Alert", {
+                            body: data.message,
+                            tag: 'alert-' + data.id
+                        });
+                    }
+
+                    if (document.getElementById('page-overview').classList.contains('active')) loadDashboard();
+                    if (document.getElementById('page-alerts').classList.contains('active')) loadAlerts();
+                } catch (e) {
+                    console.error("Error parsing alert message", e);
+                }
+            };
+
+            alertSource.onerror = async function () {
+                if (alertSource) {
+                    alertSource.close();
+                    alertSource = null;
+                }
+
+                if (!RT) {
+                    doLogout(true);
+                    return;
+                }
+
+                try {
+                    const refreshed = await refreshAccessToken();
+                    if (refreshed) {
+                        setTimeout(() => initAlertStream(), 300);
+                    } else {
+                        doLogout(true);
+                    }
+                } catch (e) {
+                    console.warn('SSE reconnect failed', e);
+                    doLogout(true);
+                }
+            };
+
+            alertSource.onerror = function (err) {
+                console.error("Alert Stream Error. Reconnecting...");
+                alertSource.close();
+                alertSource = null;
+                setTimeout(initAlertStream, 5000);
+            };
+        }
+
+        document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+        document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+        (async () => {
+            if (!AT) { return; }
+            const res = await apiFetch('/api/v1/auth/profile/');
+            if (res && res.ok) { const d = await res.json(); currentUser = d.data; showApp(); }
+        })();
+
+        function switchPage(pg) {
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const navEl = document.querySelector(`.nav-item[data-page="${pg}"]`);
+            if (navEl) navEl.classList.add('active');
+
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pg).classList.add('active');
+
+            if (pg === 'overview') loadDashboard();
+            else if (pg === 'alerts') loadAlerts();
+            else if (pg === 'events') loadEvents();
+            else if (pg === 'devices') loadDevices();
+            else if (pg === 'family') loadPersons();
+            else if (pg === 'activity') loadActivity();
+            else if (pg === 'household') loadHousehold();
+        }
+
+        document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+            item.addEventListener('click', () => switchPage(item.dataset.page));
+        });
+
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + type + ' show';
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        let detectionChart = null;
+        let chartPeriod = 'daily';
+
+        async function loadDetectionChart() {
+            const res = await apiFetch('/api/v1/dashboard/detection-chart/?period=' + chartPeriod);
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            renderDetectionChart(d.labels, d.stranger_counts, d.family_counts);
+        }
+
+        function renderDetectionChart(labels, strangerCounts, familyCounts) {
+            const ctx = document.getElementById('detectionChartCanvas').getContext('2d');
+            if (detectionChart) detectionChart.destroy();
+
+            const strangerGrad = ctx.createLinearGradient(0, 0, 0, 280);
+            strangerGrad.addColorStop(0, 'rgba(244, 81, 108, 0.9)');
+            strangerGrad.addColorStop(1, 'rgba(244, 81, 108, 0.4)');
+
+            const familyGrad = ctx.createLinearGradient(0, 0, 0, 280);
+            familyGrad.addColorStop(0, 'rgba(0, 210, 133, 0.9)');
+            familyGrad.addColorStop(1, 'rgba(0, 210, 133, 0.4)');
+
+            detectionChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Stranger',
+                            data: strangerCounts,
+                            backgroundColor: strangerGrad,
+                            borderColor: 'rgba(244, 81, 108, 1)',
+                            borderWidth: 0,
+                            borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 2, bottomRight: 2 },
+                            borderSkipped: false,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.65,
+                            hoverBackgroundColor: 'rgba(244, 81, 108, 1)',
+                        },
+                        {
+                            label: 'Family',
+                            data: familyCounts,
+                            backgroundColor: familyGrad,
+                            borderColor: 'rgba(0, 210, 133, 1)',
+                            borderWidth: 0,
+                            borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 2, bottomRight: 2 },
+                            borderSkipped: false,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.65,
+                            hoverBackgroundColor: 'rgba(0, 210, 133, 1)',
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    animation: {
+                        duration: 600,
+                        easing: 'easeOutQuart',
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(36, 38, 49, 0.95)',
+                            titleColor: '#e0e6ed',
+                            titleFont: { size: 13, weight: '600', family: 'Inter' },
+                            bodyColor: '#b0b5c1',
+                            bodyFont: { size: 12, family: 'Inter' },
+                            borderColor: 'rgba(59, 63, 92, 0.6)',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            padding: { top: 10, bottom: 10, left: 14, right: 14 },
+                            displayColors: true,
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            boxPadding: 4,
+                            usePointStyle: true,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { size: 11, family: 'Inter', weight: '500' },
+                                maxRotation: 45,
+                                minRotation: 0,
+                            },
+                            border: { display: false },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(59, 63, 92, 0.25)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#6b7280',
+                                font: { size: 11, family: 'Inter', weight: '500' },
+                                padding: 8,
+                                precision: 0,
+                            },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        function setChartPeriod(period) {
+            chartPeriod = period;
+            document.querySelectorAll('.chart-period-btn').forEach(b => {
+                b.classList.toggle('active-period', b.dataset.period === period);
+            });
+            loadDetectionChart();
+        }
+        async function loadDashboard() {
+            document.getElementById('overviewTime').textContent = new Date().toLocaleString();
+            const res = await apiFetch('/api/v1/dashboard/');
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+
+            loadDetectionChart();
+
+            updateModeUI(d.security_mode?.mode || 'disarmed');
+
+            document.getElementById('qsEvents').textContent = d.events_today || 0;
+            document.getElementById('qsFamily').textContent = d.family_today || 0;
+            document.getElementById('qsStrangers').textContent = d.strangers_today || 0;
+            document.getElementById('qsAlerts').textContent = d.unacknowledged_alerts || 0;
+
+            loadLiveStream();
+
+            const entriesEl = document.getElementById('recentEntriesList');
+            const recent = (d.recent_events || []).slice(0, 5);
+            document.getElementById('recentEntriesCount').textContent = recent.length;
+            if (!recent.length) {
+                entriesEl.innerHTML = '<div class="empty" style="padding:24px;">No entries yet</div>';
+            } else {
+                entriesEl.innerHTML = recent.map(e => {
+                    const initials = (e.person_name || e.result || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    const typeClass = e.result === 'family' ? 'family' : (e.result === 'stranger' ? 'stranger' : 'unknown');
+                    const name = e.person_name || (e.result === 'stranger' ? 'Stranger' : (e.result === 'unknown' ? 'Unknown' : 'Unidentified'));
+                    return `<div class="entry-row">
+                        <div class="entry-avatar ${typeClass}">${initials}</div>
+                        <div class="entry-info">
+                            <div class="entry-name">${esc(name)}</div>
+                            <div class="entry-meta">${esc(e.device_name || e.device_id || 'Unknown device')}</div>
+                        </div>
+                        <div class="entry-time">${fmtTime(e.created_at)}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            loadDetectionChart();
+
+            const bc = d.unacknowledged_alerts;
+            ['topAlertBadge', 'sideAlertBadge'].forEach(id => { const e = document.getElementById(id); if (bc > 0) { e.textContent = bc; e.style.display = 'inline-block'; } else e.style.display = 'none'; });
+        }
+
+        function updateModeUI(mode) {
+            document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn');
+            const oldArmed = document.getElementById('modeArmed');
+            const oldHome = document.getElementById('modeHome');
+            const oldDis = document.getElementById('modeDisarmed');
+            if (mode === 'armed') { if (oldArmed) oldArmed.classList.add('active-armed'); }
+            else if (mode === 'home') { if (oldHome) oldHome.classList.add('active-home'); }
+            else { if (oldDis) oldDis.classList.add('active-disarmed'); }
+
+            document.querySelectorAll('.mode-compact-btn').forEach(b => b.className = 'mode-compact-btn');
+            const cmpArmed = document.getElementById('modeArmedCompact');
+            const cmpHome = document.getElementById('modeHomeCompact');
+            const cmpDis = document.getElementById('modeDisarmedCompact');
+            if (mode === 'armed') { if (cmpArmed) cmpArmed.classList.add('active', 'active-armed'); }
+            else if (mode === 'home') { if (cmpHome) cmpHome.classList.add('active', 'active-home'); }
+            else { if (cmpDis) cmpDis.classList.add('active', 'active-disarmed'); }
+        }
+
+        async function setMode(mode) {
+            const res = await apiFetch('/api/v1/security-mode/', { method: 'PUT', body: JSON.stringify({ mode }) });
+            if (res && res.ok) { const d = await res.json(); updateModeUI(d.data.mode); toast('Security mode: ' + mode); }
+            else toast('Failed to change mode', 'error');
+        }
+
+        async function loadLiveStream() {
+            const img = document.getElementById('liveStreamImg');
+            const placeholder = document.getElementById('streamPlaceholder');
+            const deviceName = document.getElementById('streamDeviceName');
+            const res = await apiFetch('/api/v1/devices/');
+            if (!res || !res.ok) { placeholder.style.display = 'flex'; img.classList.remove('active'); return; }
+            const d = (await res.json()).data;
+            const dev = (d.devices || []).find(x => x.stream_url && x.is_active);
+            if (dev) {
+                img.src = dev.stream_url;
+                img.classList.add('active');
+                placeholder.style.display = 'none';
+                deviceName.textContent = dev.name || dev.device_id;
+            } else {
+                img.classList.remove('active');
+                placeholder.style.display = 'flex';
+                deviceName.textContent = 'No device';
+            }
+        }
+
+        let familyBarChart = null;
+        function renderFamilyPieChart(events) {
+            const ctx = document.getElementById('familyBarCanvas').getContext('2d');
+            if (familyBarChart) familyBarChart.destroy();
+
+            const familyEvents = events.filter(e => e.result === 'family');
+            const familyCounts = {};
+            familyEvents.forEach(e => { const name = e.person_name || 'Unknown'; familyCounts[name] = (familyCounts[name] || 0) + 1; });
+
+            const strangerCount = events.filter(e => e.result === 'stranger').length;
+
+            const labels = Object.keys(familyCounts);
+            const familyData = Object.values(familyCounts);
+
+            const familyColors = labels.map((_, i) => {
+                const palette = [
+                    'rgba(16, 185, 129, 0.9)', 'rgba(59, 130, 246, 0.9)',
+                    'rgba(14, 165, 233, 0.9)', 'rgba(139, 92, 246, 0.9)',
+                    'rgba(245, 158, 11, 0.9)', 'rgba(236, 72, 153, 0.9)',
+                ];
+                return palette[i % palette.length];
+            });
+
+            const allLabels = labels.length ? [...labels, 'Strangers'] : (strangerCount ? ['Strangers'] : ['No Data']);
+            const allData = labels.length ? [...familyData, strangerCount] : (strangerCount ? [strangerCount] : [0]);
+            const allColors = labels.length ? [...familyColors, 'rgba(220, 38, 38, 0.9)'] : (strangerCount ? ['rgba(220, 38, 38, 0.9)'] : ['rgba(100, 116, 139, 0.2)']);
+
+            const h = ctx.canvas.parentElement.clientHeight || 240;
+            familyBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: allLabels,
+                    datasets: [{
+                        label: 'Detections',
+                        data: allData,
+                        backgroundColor: allColors,
+                        borderWidth: 0,
+                        borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 2, bottomRight: 2 },
+                        borderSkipped: false,
+                        barPercentage: 0.5,
+                        categoryPercentage: 0.65,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 600, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            titleColor: '#e2e8f0',
+                            bodyColor: '#94a3b8',
+                            borderColor: 'rgba(148, 163, 184, 0.15)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            padding: 10,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 11, family: 'Inter', weight: '600' }, maxRotation: 25, minRotation: 0 },
+                            border: { display: false },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.08)', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 10, family: 'Inter', weight: '500' }, padding: 6, precision: 0 },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        }
+
+        async function loadAlerts() {
+            let url = '/api/v1/alerts/?limit=100';
+            const sev = document.getElementById('alertSevFilter')?.value;
+            const ack = document.getElementById('alertAckFilter')?.value;
+            if (sev) url += '&severity=' + sev;
+            if (ack) url += '&acknowledged=' + ack;
+            const res = await apiFetch(url);
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('alertsList');
+            if (!d.alerts?.length) { el.innerHTML = '<div class="empty">No alerts match your filter</div>'; return; }
+            el.innerHTML = d.alerts.map(a => alertRow(a)).join('');
+        }
+
+        function alertRow(a) {
+            return `<div class="alert-row">
+        <div class="alert-body" onclick="ackAlert(${a.id})" style="cursor:pointer;">
+            <div class="title">${esc(a.title)}</div>
+            <div class="msg">${esc(a.message)}</div>
+            <div class="time">${fmtTime(a.created_at)} · ${pillSev(a.severity)} ${a.is_acknowledged ? pillAck('ack') : pillAck('pending')}</div>
+        </div>
+        <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;"><button class="btn btn-danger btn-sm" onclick="deleteAlert(${a.id})">Delete</button></div>
+    </div>`;
+        }
+
+        async function ackAlert(id) {
+            const res = await apiFetch('/api/v1/alerts/' + id + '/', { method: 'POST' });
+            if (res && res.ok) { toast('Alert acknowledged'); loadAlerts(); loadDashboard(); }
+        }
+        async function ackAll() {
+            const res = await apiFetch('/api/v1/alerts/acknowledge-all/', { method: 'POST' });
+            if (res && res.ok) { const d = await res.json(); toast(d.message); loadAlerts(); loadDashboard(); }
+        }
+
+        async function deleteAlert(id) {
+            if (!confirm('Delete this alert?')) return;
+            const res = await apiFetch('/api/v1/alerts/' + id + '/', { method: 'DELETE' });
+            if (res && res.ok) { toast('Alert deleted'); loadAlerts(); loadDashboard(); }
+            else { toast('Failed to delete alert', 'error'); }
+        }
+
+        async function loadEvents() {
+            let url = '/api/v1/events/?limit=100';
+            const r = document.getElementById('eventResultFilter')?.value;
+            const df = document.getElementById('eventDateFrom')?.value;
+            const dt = document.getElementById('eventDateTo')?.value;
+            if (r) url += '&result=' + r;
+            if (df) url += '&date_from=' + df;
+            if (dt) url += '&date_to=' + dt;
+            const res = await apiFetch(url);
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('eventsList');
+            if (!d.events?.length) { el.innerHTML = '<div class="empty">No events found</div>'; return; }
+            el.innerHTML = '<table><thead><tr><th>Time</th><th>Device</th><th>Result</th><th>Person</th><th>Confidence</th><th>Image</th><th>Actions</th></tr></thead><tbody>' +
+                d.events.map(e => `<tr><td>${fmtTime(e.created_at)}</td><td>${e.device_name || e.device_id}</td><td>${pillResult(e.result)}</td><td>${e.person_name || '—'}</td><td>${(e.confidence * 100).toFixed(0)}%</td><td>${e.image_url ? `<button class="btn btn-primary btn-sm" onclick="openImageModal('${e.image_url}',${e.id})" style="padding:4px 12px;">View</button>` : '—'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})">Delete</button></td></tr>`).join('') + '</tbody></table>';
+        }
+
+        async function loadDevices() {
+            const res = await apiFetch('/api/v1/devices/');
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('devicesList');
+            if (!d.devices?.length) { el.innerHTML = '<div class="empty">No devices registered yet</div>'; return; }
+            el.innerHTML = '<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">' + d.devices.map(dev => `
+        <div class="stat-card" style="flex-direction: column; align-items: stretch; gap: 6px; padding: 22px;">
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <div class="label" style="margin: 0; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(dev.device_id)}">${esc(dev.device_id)}</div>
+                ${dev.is_active ? '<span class="pill pill-active">Online</span>' : '<span class="pill pill-inactive">Offline</span>'}
+            </div>
+            <div class="value" style="font-size:1.15rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(dev.name || dev.device_id)}">${esc(dev.name || dev.device_id)}</div>
+            <div class="sub" style="display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> 
+                <span style="text-overflow: ellipsis; overflow: hidden;">${esc(dev.location || 'No location assigned')}</span>
+            </div>
+            <div class="sub" style="display: flex; align-items: center; gap: 6px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.6"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> 
+                ${fmtDate(dev.created_at).split(',')[0] || fmtDate(dev.created_at)}
+            </div>
+            <div style="margin-top:20px; display:flex; gap:8px;">
+                <button class="btn btn-ghost btn-sm" style="width: 100%;" onclick="openEditDevice(${dev.id}, '${esc(dev.name || '')}', '${esc(dev.location || '')}')">Edit Details</button>
+            </div>
+        </div>`).join('') + '</div>';
+        }
+
+        function showAddDevice() { document.getElementById('addDeviceForm').style.display = 'block'; }
+        function hideAddDevice() { document.getElementById('addDeviceForm').style.display = 'none'; }
+        async function addDevice() {
+            const did = document.getElementById('newDeviceId').value.trim();
+            if (!did) { toast('Device ID required', 'error'); return; }
+            const res = await apiFetch('/api/v1/devices/', { method: 'POST', body: JSON.stringify({ device_id: did, name: document.getElementById('newDeviceName').value.trim(), location: document.getElementById('newDeviceLoc').value.trim() }) });
+            if (res && res.ok) { toast('Device registered'); hideAddDevice(); loadDevices(); document.getElementById('newDeviceId').value = ''; document.getElementById('newDeviceName').value = ''; document.getElementById('newDeviceLoc').value = ''; }
+            else { const d = await res.json(); toast(d.message || 'Failed', 'error'); }
+        }
+        async function deleteDevice(id, name) {
+            if (!confirm('Delete device "' + name + '"?')) return;
+            const res = await apiFetch('/api/v1/devices/' + id + '/', { method: 'DELETE' });
+            if (res && res.ok) { toast('Device deleted'); loadDevices(); }
+        }
+
+        function openEditDevice(id, name, loc) {
+            document.getElementById('editDeviceIdVal').value = id;
+            document.getElementById('editDeviceName').value = name;
+            document.getElementById('editDeviceLoc').value = loc;
+            document.getElementById('editDeviceModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function saveDeviceEdit() {
+            const id = document.getElementById('editDeviceIdVal').value;
+            const name = document.getElementById('editDeviceName').value.trim();
+            const loc = document.getElementById('editDeviceLoc').value.trim();
+            const res = await apiFetch('/api/v1/devices/' + id + '/', {
+                method: 'PATCH',
+                body: JSON.stringify({ name: name, location: loc })
+            });
+            if (res && res.ok) {
+                toast('Device updated');
+                closeModal('editDeviceModal');
+                loadDevices();
+            } else {
+                toast('Failed to update device', 'error');
+            }
+        }
+
+        let fpFiles = [];
+        const fpFileInput = document.getElementById('fpFileInput');
+        const fpDZ = document.getElementById('fpDropZone');
+
+        fpFileInput.addEventListener('change', e => handleFPFiles(Array.from(e.target.files)));
+        fpDZ.addEventListener('dragover', e => { e.preventDefault(); fpDZ.style.borderColor = 'var(--text)'; });
+        fpDZ.addEventListener('dragleave', e => { e.preventDefault(); fpDZ.style.borderColor = 'var(--border)'; });
+        fpDZ.addEventListener('drop', e => { e.preventDefault(); fpDZ.style.borderColor = 'var(--border)'; if (e.dataTransfer.files.length) handleFPFiles(Array.from(e.dataTransfer.files)); });
+
+        function handleFPFiles(files) {
+            const imgs = files.filter(f => f.type.startsWith('image/'));
+            if (!imgs.length) return;
+            fpFiles = fpFiles.concat(imgs);
+            renderFPPreviews();
+            checkFP();
+        }
+        function renderFPPreviews() {
+            const el = document.getElementById('fpPreviews');
+            const countEl = document.getElementById('fpFileCount');
+            countEl.textContent = fpFiles.length + ' photo(s) selected';
+            el.innerHTML = '';
+            fpFiles.forEach((f, i) => {
+                const r = new FileReader();
+                r.onload = e => {
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'position:relative;display:inline-block;';
+                    wrap.innerHTML = `<img src="${e.target.result}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;"><button onclick="removeFPFile(${i})" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>`;
+                    el.appendChild(wrap);
+                };
+                r.readAsDataURL(f);
+            });
+        }
+        function removeFPFile(i) { fpFiles.splice(i, 1); renderFPPreviews(); checkFP(); }
+        function checkFP() { document.getElementById('fpAddBtn').disabled = !(document.getElementById('fpName').value.trim() && fpFiles.length > 0); }
+        document.getElementById('fpName').addEventListener('input', checkFP);
+
+        async function addPerson() {
+            const name = document.getElementById('fpName').value.trim();
+            if (!name || !fpFiles.length) return;
+            document.getElementById('fpAddBtn').disabled = true;
+            document.getElementById('fpLoader').style.display = 'block';
+            let success = 0, fail = 0;
+            for (const file of fpFiles) {
+                const b64 = await fileToBase64(file);
+                const res = await apiFetch('/api/v1/known-persons/', { method: 'POST', body: JSON.stringify({ name, image: b64 }) });
+                if (res && res.ok) success++; else fail++;
+                document.getElementById('fpLoader').textContent = `Processing ArcFace... (${success + fail}/${fpFiles.length})`;
+            }
+            document.getElementById('fpLoader').style.display = 'none';
+            document.getElementById('fpLoader').textContent = 'Processing ArcFace...';
+            if (success > 0) {
+                toast(`Added ${name} with ${success} photo(s)` + (fail ? `, ${fail} failed` : ''));
+                document.getElementById('fpName').value = '';
+                fpFiles = [];
+                document.getElementById('fpPreviews').innerHTML = '';
+                document.getElementById('fpFileCount').textContent = '';
+                checkFP();
+                loadPersons();
+                loadHousehold();
+            } else {
+                toast('Failed to add photos', 'error');
+                checkFP();
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve) => {
+                const r = new FileReader();
+                r.onload = e => resolve(e.target.result.split(',')[1]);
+                r.readAsDataURL(file);
+            });
+        }
+
+        let currentGroupedPersons = {};
+
+        async function loadPersons() {
+            const res = await apiFetch('/api/v1/known-persons/');
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('personsGrid');
+            if (!d.persons?.length) { el.innerHTML = '<div class="empty" style="grid-column:1/-1;">No family members added yet</div>'; return; }
+            const grouped = {};
+            d.persons.forEach(p => {
+                if (!grouped[p.name]) grouped[p.name] = [];
+                grouped[p.name].push(p);
+            });
+            currentGroupedPersons = grouped;
+            el.innerHTML = Object.entries(grouped).map(([name, entries]) => {
+                let totalPhotos = 0;
+                entries.forEach(e => totalPhotos += (e.photos && e.photos.length > 0 ? e.photos.length : (e.photo_url ? 1 : 0)));
+                const mainImg = (entries[0].photos && entries[0].photos.length > 0) ? entries[0].photos[0].url : (entries[0].photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=dbeafe&color=1e40af&size=200');
+                const ids = entries.map(e => e.id);
+                return `<div class="person-card" style="cursor:pointer; transition:transform 0.2s;" onclick="showPersonDetailsPage('${esc(name).replace(/'/g, "\\'")}')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+                    <img src="${mainImg}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=dbeafe&color=1e40af'">
+                    <div class="info">
+                        <h4>${esc(name)}</h4>
+                        <p>${totalPhotos} photo(s) — Tap to view</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        let currentModalPersonName = '';
+
+        function showPersonDetailsPage(name) {
+            const entries = currentGroupedPersons[name];
+            currentModalPersonName = name;
+
+            switchPage('person-details');
+
+            document.getElementById('spName').textContent = name;
+
+            const deleteBtn = document.getElementById('spDeleteBtn');
+            deleteBtn.onclick = async () => {
+                const ids = (entries || []).map(e => e.id);
+                if (!confirm('Are you sure you want to permanently remove "' + esc(name) + '" and all associated biometrics?')) return;
+
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = 'Removing...';
+
+                try {
+                    for (const fid of ids) {
+                        await apiFetch('/api/v1/known-persons/' + fid + '/', { method: 'DELETE' });
+                    }
+                    toast('Member "' + esc(name) + '" removed successfully');
+                    switchPage('household');
+                    loadHouseholdFaces();
+                    loadPersons();
+                    loadHousehold();
+                } catch (e) {
+                    toast('Error removing member', 'error');
+                } finally {
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = 'Remove Member';
+                }
+            };
+
+            if (!entries || entries.length === 0) {
+                document.getElementById('spMemberSince').textContent = '—';
+                document.getElementById('spAvatar').src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=e5e7eb';
+
+                document.getElementById('spGalleryGrid').innerHTML = `
+                    <label for="spNewScanInput" class="add-photo-card">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        NEW SCAN
+                    </label>
+                `;
+            } else {
+                document.getElementById('spMemberSince').textContent = fmtDate(entries[0].created_at);
+
+                const grid = document.getElementById('spGalleryGrid');
+                let html = '';
+                let primaryPhoto = null;
+
+                entries.forEach(p => {
+                    const photos = p.photos || [];
+                    if (photos.length === 0 && p.photo_url) {
+                        photos.push({ id: 'primary', url: p.photo_url });
+                    }
+                    photos.forEach(ph => {
+                        if (!primaryPhoto) primaryPhoto = ph.url;
+                        html += `
+                        <div class="photo-card" onclick="window.open('${ph.url}', '_blank')">
+                            <img src="${ph.url}?t=${Date.now()}">
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteSingleHouseholdFace(${p.id}, '${ph.id}', '${esc(name).replace('\'', "\'")}', this)" title="Delete Photo">✕</button>
+                        </div>`;
+                    });
+                });
+
+                html += `
+                    <label for="spNewScanInput" class="add-photo-card">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        NEW SCAN
+                    </label>
+                `;
+
+                document.getElementById('spAvatar').src = primaryPhoto || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=dbeafe&color=1e40af');
+                grid.innerHTML = html;
+            }
+
+            const fileInput = document.getElementById('spNewScanInput');
+            const newFileInput = fileInput.cloneNode(true);
+            fileInput.parentNode.replaceChild(newFileInput, fileInput);
+            newFileInput.addEventListener('change', async (e) => {
+                if (e.target.files.length > 0) {
+                    await handleSPAddPhoto(currentModalPersonName, e.target.files);
+                }
+            });
+
+            populateSpEventHistory(name);
+        }
+
+        async function populateSpEventHistory(name) {
+            document.getElementById('spEventHistory').innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px;">Loading event history...</td></tr>';
+            try {
+                const res = await apiFetch('/api/v1/events/?limit=100');
+                if (!res || !res.ok) return;
+                const d = (await res.json()).data;
+                const filtered = d.events.filter(e => e.person_name === name);
+
+                if (filtered.length > 0) {
+                    const latest = filtered[0];
+                    document.getElementById('spLastActivityTime').textContent = timeAgo(latest.created_at);
+                    document.getElementById('spLastActivityLoc').textContent = latest.device_name || latest.device_id || 'Unknown';
+                    document.getElementById('spIdentityScore').textContent = (latest.confidence * 100).toFixed(1) + '%';
+
+                    document.getElementById('spEventHistory').innerHTML = filtered.map(e => `
+                        <tr style="border-bottom: 1px solid var(--border-light);">
+                            <td style="padding: 14px 24px; font-weight: 600; color: var(--text);">${fmtDate(e.created_at)}<br><span style="font-size:0.82rem; color:var(--text3); font-weight:normal;">${new Date(e.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></td>
+                            <td style="padding: 14px 24px;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${e.result === 'known' ? 'var(--green)' : (e.result === 'stranger' ? 'var(--red)' : 'var(--orange)')}; margin-right:8px;"></span>
+                                ${e.result === 'known' ? 'Smart Entry' : (e.result === 'stranger' ? 'Intrusion Alert' : 'Detection')}
+                            </td>
+                            <td style="padding: 14px 24px; color: var(--text2);">${esc(e.device_name || e.device_id || '—')}</td>
+                            <td style="padding: 14px 24px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${e.result === 'known' ? 'var(--green)' : 'var(--text3)'}" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                    <span style="font-weight:600; color:var(--text2);">${(e.confidence * 100).toFixed(0)}% Match</span>
+                                </div>
+                            </td>
+                            <td style="padding: 14px 24px; font-weight: 700; font-size: 0.82rem; color: var(--accent); letter-spacing: 0.05em; cursor:pointer;" onclick="if('${e.image_url}') window.open('${e.image_url}', '_blank')">
+                                ${e.image_url ? 'VIEW CLIP' : 'NO CLIP'}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    document.getElementById('spLastActivityTime').textContent = '--';
+                    document.getElementById('spLastActivityLoc').textContent = '--';
+                    document.getElementById('spIdentityScore').textContent = '—';
+                    document.getElementById('spEventHistory').innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px;">No detected activity logs.</td></tr>';
+                }
+            } catch (err) {
+                document.getElementById('spEventHistory').innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px; color:red;">Error fetching events.</td></tr>';
+            }
+        }
+
+        function timeAgo(dateString) {
+            const date = new Date(dateString);
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "y ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "mo ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m ago";
+            return "Just now";
+        }
+
+        async function handleSPAddPhoto(name, files) {
+            const loader = document.getElementById('spLoader');
+            loader.style.display = 'block';
+            let success = 0, fail = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const f = files[i];
+                if (!f.type.startsWith('image/')) continue;
+                loader.textContent = `Processing image ${i + 1} of ${files.length}...`;
+                try {
+                    const b64 = await fileToBase64(f);
+                    const res = await apiFetch('/api/v1/known-persons/', { method: 'POST', body: JSON.stringify({ name, image: b64 }) });
+                    if (res && res.ok) success++;
+                    else fail++;
+                } catch (e) { fail++; }
+            }
+
+            loader.style.display = 'none';
+            if (success > 0) {
+                toast(`Added ${success} photo(s)` + (fail ? `, ${fail} failed` : ''));
+                await Promise.all([loadPersons(), loadHousehold()]);
+                showPersonDetailsPage(name);
+            } else {
+                toast('Failed to add photos', 'error');
+            }
+        }
+
+        async function deleteSingleHouseholdFace(personId, photoId, name, btnEl) {
+            if (!confirm('Delete this single photo of "' + name + '"?')) return;
+            try {
+                const res = await apiFetch('/api/v1/known-persons/' + personId + '/photos/' + photoId + '/', { method: 'DELETE' });
+                if (res && res.ok) {
+                    toast('Photo deleted');
+                    await Promise.all([loadPersons(), loadHousehold()]);
+                    showPersonDetailsPage(name);
+                } else {
+                    const d = await res.json();
+                    toast('Failed: ' + d.message, 'error');
+                }
+            } catch (e) {
+                toast('Error: ' + e.message, 'error');
+            }
+        }
+
+        let hhFiles = [];
+        const hhFileEl = document.getElementById('hhFileInput');
+        const hhDZ = document.getElementById('hhDropZone');
+
+        hhFileEl.addEventListener('change', e => handleHHFiles(Array.from(e.target.files)));
+        hhDZ.addEventListener('dragover', e => { e.preventDefault(); hhDZ.style.borderColor = 'var(--text)'; });
+        hhDZ.addEventListener('dragleave', e => { e.preventDefault(); hhDZ.style.borderColor = 'var(--border)'; });
+        hhDZ.addEventListener('drop', e => { e.preventDefault(); hhDZ.style.borderColor = 'var(--border)'; if (e.dataTransfer.files.length) handleHHFiles(Array.from(e.dataTransfer.files)); });
+
+        function handleHHFiles(files) {
+            const imgs = files.filter(f => f.type.startsWith('image/'));
+            if (!imgs.length) return;
+            hhFiles = hhFiles.concat(imgs);
+            renderHHPreviews();
+            checkHH();
+        }
+        function renderHHPreviews() {
+            const el = document.getElementById('hhPreviews');
+            const countEl = document.getElementById('hhFileCount');
+            countEl.textContent = hhFiles.length + ' photo(s) selected';
+            el.innerHTML = '';
+            hhFiles.forEach((f, i) => {
+                const r = new FileReader();
+                r.onload = e => {
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'position:relative;display:inline-block;';
+                    wrap.innerHTML = `<img src="${e.target.result}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;"><button onclick="removeHHFile(${i})" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>`;
+                    el.appendChild(wrap);
+                };
+                r.readAsDataURL(f);
+            });
+        }
+        function removeHHFile(i) { hhFiles.splice(i, 1); renderHHPreviews(); checkHH(); }
+        function checkHH() { document.getElementById('hhAddBtn').disabled = !(document.getElementById('hhMemberName').value.trim() && hhFiles.length > 0); }
+        document.getElementById('hhMemberName').addEventListener('input', checkHH);
+
+        async function addHouseholdMember() {
+            const name = document.getElementById('hhMemberName').value.trim();
+            if (!name || !hhFiles.length) return;
+            document.getElementById('hhAddBtn').disabled = true;
+            document.getElementById('hhLoader').style.display = 'block';
+            let success = 0, fail = 0;
+            for (const file of hhFiles) {
+                const b64 = await fileToBase64(file);
+                const res = await apiFetch('/api/v1/known-persons/', { method: 'POST', body: JSON.stringify({ name, image: b64 }) });
+                if (res && res.ok) success++; else fail++;
+                document.getElementById('hhLoader').textContent = `Processing ArcFace... (${success + fail}/${hhFiles.length})`;
+            }
+            document.getElementById('hhLoader').style.display = 'none';
+            document.getElementById('hhLoader').textContent = 'Processing ArcFace...';
+            if (success > 0) {
+                toast(`Added ${name} with ${success} photo(s)` + (fail ? `, ${fail} failed` : ''));
+                document.getElementById('hhMemberName').value = '';
+                hhFiles = [];
+                document.getElementById('hhPreviews').innerHTML = '';
+                document.getElementById('hhFileCount').textContent = '';
+                checkHH();
+                loadHousehold();
+                loadPersons();
+                loadHousehold();
+            } else {
+                toast('Failed to add photos', 'error');
+                checkHH();
+            }
+        }
+
+        async function loadHouseholdFaces() {
+            const res = await apiFetch('/api/v1/known-persons/');
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('hhPersonsGrid');
+            const countEl = document.getElementById('hhFaceCount');
+            if (!d.persons?.length) {
+                el.innerHTML = '<div class="empty" style="grid-column:1/-1;">No known faces registered yet. Add a member above.</div>';
+                countEl.textContent = '';
+                return;
+            }
+            const grouped = {};
+            d.persons.forEach(p => {
+                if (!grouped[p.name]) grouped[p.name] = [];
+                grouped[p.name].push(p);
+            });
+            currentGroupedPersons = grouped;
+
+            let totalHouseholdPhotos = 0;
+            d.persons.forEach(p => totalHouseholdPhotos += (p.photos && p.photos.length > 0 ? p.photos.length : (p.photo_url ? 1 : 0)));
+            countEl.textContent = Object.keys(grouped).length + ' person(s), ' + totalHouseholdPhotos + ' photo(s)';
+
+            el.innerHTML = Object.entries(grouped).map(([name, entries]) => {
+                let totalPhotos = 0;
+                entries.forEach(e => totalPhotos += (e.photos && e.photos.length > 0 ? e.photos.length : (e.photo_url ? 1 : 0)));
+                const mainImg = (entries[0].photos && entries[0].photos.length > 0) ? entries[0].photos[0].url : (entries[0].photo_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=dbeafe&color=1e40af&size=200');
+                const ids = entries.map(e => e.id);
+                return `<div class="person-card" style="cursor:pointer; transition:transform 0.2s;" onclick="showPersonDetailsPage('${esc(name).replace(/'/g, "\\'")}')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
+                    <img src="${mainImg}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=dbeafe&color=1e40af'">
+                    <div class="info">
+                        <h4>${esc(name)}</h4>
+                        <p>${totalPhotos} photo(s) — Tap to view</p>
+                        <button class="btn btn-danger btn-sm mt-16" onclick="event.stopPropagation(); deleteHouseholdFacesBulk(0,'${esc(name)}',[${ids.join(',')}])">Remove All</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function deleteHouseholdFacesBulk(id, name, ids) {
+            if (!ids) ids = [id];
+            if (!confirm('Remove all ' + ids.length + ' photo(s) of "' + name + '"?')) return;
+            for (const fid of ids) { await apiFetch('/api/v1/known-persons/' + fid + '/', { method: 'DELETE' }); }
+            toast('Removed ' + name); loadHouseholdFaces(); loadPersons(); loadHousehold();
+        }
+
+        let afB64 = null;
+        const afFile = document.getElementById('afFileInput');
+        const afDZ = document.getElementById('afDropZone');
+
+        afFile.addEventListener('change', e => handleAF(e.target.files[0]));
+        afDZ.addEventListener('dragover', e => { e.preventDefault(); afDZ.style.borderColor = 'var(--accent)'; });
+        afDZ.addEventListener('dragleave', e => { e.preventDefault(); afDZ.style.borderColor = 'var(--border)'; });
+        afDZ.addEventListener('drop', e => { e.preventDefault(); afDZ.style.borderColor = 'var(--border)'; if (e.dataTransfer.files.length) handleAF(e.dataTransfer.files[0]); });
+
+        function handleAF(f) { if (!f || !f.type.startsWith('image/')) return; const r = new FileReader(); r.onload = e => { document.getElementById('afPreview').src = e.target.result; document.getElementById('afPreview').style.display = 'block'; afB64 = e.target.result.split(',')[1]; document.getElementById('afTestBtn').disabled = false; }; r.readAsDataURL(f); }
+
+        async function testArcface() {
+            if (!afB64) return;
+            document.getElementById('afTestBtn').disabled = true;
+            document.getElementById('afLoader').style.display = 'block';
+            document.getElementById('afResult').style.display = 'none';
+            try {
+                const res = await fetch('/api/v1/detect/arcface/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceId: 'web-dashboard', type: 'manual-test', image: afB64 }) });
+                const d = await res.json();
+                if (d.data?.embedding) delete d.data.embedding;
+                document.getElementById('afResult').textContent = JSON.stringify(d, null, 2);
+                document.getElementById('afResult').style.display = 'block';
+            } catch (e) { document.getElementById('afResult').textContent = 'Error: ' + e.message; document.getElementById('afResult').style.display = 'block'; }
+            finally { document.getElementById('afTestBtn').disabled = false; document.getElementById('afLoader').style.display = 'none'; }
+        }
+
+        async function loadActivity() {
+            let url = '/api/v1/activity/?limit=100';
+            const f = document.getElementById('actFilter')?.value;
+            if (f) url += '&action=' + f;
+            const res = await apiFetch(url);
+            if (!res || !res.ok) return;
+            const d = (await res.json()).data;
+            const el = document.getElementById('activityList');
+            if (!d.logs?.length) { el.innerHTML = '<div class="empty">No activity yet</div>'; return; }
+            el.innerHTML = '<table><thead><tr><th>Time</th><th>Action</th><th>Description</th><th>User</th></tr></thead><tbody>' +
+                d.logs.map(l => `<tr><td>${fmtTime(l.created_at)}</td><td>${l.action.replace(/_/g, ' ')}</td><td style="color:var(--text2)">${esc(l.description)}</td><td>${l.username || 'system'}</td></tr>`).join('') + '</tbody></table>';
+        }
+
+        async function loadHousehold() {
+            const [hRes, mRes, pRes, kpRes] = await Promise.all([
+                apiFetch('/api/v1/auth/household/'),
+                apiFetch('/api/v1/auth/household/members/'),
+                apiFetch('/api/v1/auth/profile/'),
+                apiFetch('/api/v1/known-persons/')
+            ]);
+
+            let knownPersons = [];
+            let uniqueKnownPersons = [];
+            if (kpRes && kpRes.ok) {
+                const kpData = (await kpRes.json()).data;
+                knownPersons = kpData.persons || [];
+
+                const grouped = {};
+                knownPersons.forEach(p => {
+                    if (!grouped[p.name]) grouped[p.name] = [];
+                    grouped[p.name].push(p);
+                });
+                currentGroupedPersons = grouped;
+                uniqueKnownPersons = Object.values(grouped).map(entries => entries[0]);
+            }
+
+            if (hRes && hRes.ok) {
+                const h = (await hRes.json()).data;
+                const totalMembers = h.member_count + Object.keys(currentGroupedPersons || {}).length;
+                document.getElementById('editHName').value = h.name;
+                document.getElementById('editHAddress').value = h.address || '';
+                document.getElementById('householdInfo').innerHTML = `
+            <div class="form-group"><label>Name</label><div style="color:var(--text);font-size:1.2rem;font-weight:700;">${esc(h.name)}</div></div>
+            <div class="form-group"><label>Address</label><div style="color:var(--text2);">${esc(h.address || 'Not set')}</div></div>
+            <div class="form-group"><label>Total Members</label><div>${totalMembers} member(s) <span style="color:var(--text2);font-size:.85rem;">(${h.member_count} account + ${Object.keys(currentGroupedPersons || {}).length} face)</span></div></div>
+        `;
+            }
+            if (pRes && pRes.ok) {
+                const p = (await pRes.json()).data;
+                currentUser = p;
+                document.getElementById('topUser').textContent = (p.first_name || p.username || '');
+                document.getElementById('editPFirst').value = p.first_name || '';
+                document.getElementById('editPLast').value = p.last_name || '';
+                document.getElementById('editPEmail').value = p.email || '';
+                document.getElementById('profileInfo').innerHTML = `
+                    <div class="form-group"><label>Full Name</label><div style="color:var(--text);font-size:1.1rem;font-weight:700;">${esc(p.first_name || '')} ${esc(p.last_name || '')}</div></div>
+                    <div class="form-group"><label>Username</label><div style="color:var(--text2);">@${esc(p.username)}</div></div>
+                    <div class="form-group"><label>Email</label><div style="color:var(--text2);">${esc(p.email)}</div></div>
+                `;
+            }
+            if (mRes && mRes.ok) {
+                const m = (await mRes.json()).data;
+                const el = document.getElementById('householdMembers');
+                let rows = (m.members || []).map(u => `<tr><td><b>${esc(u.first_name || '')} ${esc(u.last_name || '')}</b><br><span style="color:var(--text2);font-size:.8rem;">@${esc(u.username)}</span></td><td>${u.role === 'owner' ? '<span class="pill pill-family">Owner</span>' : '<span class="pill pill-low">Account</span>'}</td><td>${fmtDate(u.date_joined)}</td></tr>`);
+                rows = rows.concat(uniqueKnownPersons.map(p => {
+                    const img = (p.photos && p.photos.length > 0) ? p.photos[0].url : (p.photo_url || '');
+                    const avatar = img ? `<img src="${img}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:10px;" onerror="this.style.display='none'">` : '';
+                    return `<tr style="cursor:pointer; transition:background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--surface2)'" onmouseout="this.style.backgroundColor='transparent'" onclick="showPersonDetailsPage('${esc(p.name).replace(/'/g, "\\'")}')"><td>${avatar}<b>${esc(p.name)}</b><br><span style="color:var(--text2);font-size:.8rem;">Face registered (Tap to view details)</span></td><td><span class="pill pill-unknown">Known Face</span></td><td>${fmtDate(p.created_at)}</td></tr>`;
+                }));
+                if (!rows.length) { el.innerHTML = '<div class="empty">No members yet</div>'; }
+                else { el.innerHTML = '<table><thead><tr><th>Member</th><th>Type</th><th>Added</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'; }
+            }
+        }
+
+        function openHouseholdModal() { document.getElementById('householdModal').classList.add('show'); document.body.style.overflow = 'hidden'; }
+        function openProfileModal() { document.getElementById('profileModal').classList.add('show'); document.body.style.overflow = 'hidden'; }
+        function closeModal(id, event) { if (!event || event.target.id === id) { document.getElementById(id).classList.remove('show'); document.body.style.overflow = 'auto'; } }
+
+        async function saveHousehold() {
+            const name = document.getElementById('editHName').value.trim();
+            const address = document.getElementById('editHAddress').value.trim();
+            if (!name) { toast('Household name required', 'error'); return; }
+            const res = await apiFetch('/api/v1/auth/household/', { method: 'PATCH', body: JSON.stringify({ name, address }) });
+            if (res && res.ok) { toast('Household updated'); closeModal('householdModal'); loadHousehold(); }
+            else { toast('Failed to update household', 'error'); }
+        }
+
+        async function saveProfile() {
+            const first_name = document.getElementById('editPFirst').value.trim();
+            const last_name = document.getElementById('editPLast').value.trim();
+            const email = document.getElementById('editPEmail').value.trim();
+            const res = await apiFetch('/api/v1/auth/profile/', { method: 'PATCH', body: JSON.stringify({ first_name, last_name, email }) });
+            if (res && res.ok) { toast('Profile updated'); closeModal('profileModal'); loadHousehold(); }
+            else { toast('Failed to update profile', 'error'); }
+        }
+
+        function fmtTime(iso) { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); }
+        function fmtDate(iso) { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
+        function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function pillResult(r) { return `<span class="pill pill-${r}">${r}</span>`; }
+        function pillSev(s) { return `<span class="pill pill-${s}">${s}</span>`; }
+        function pillAck(s) { return s === 'ack' ? '<span class="pill pill-ack">ack</span>' : '<span class="pill pill-pending">pending</span>'; }
+
+        let currentEventId = null;
+
+        function openImageModal(imageUrl, eventId) {
+            document.getElementById('modalImage').src = imageUrl;
+            currentEventId = eventId;
+            document.getElementById('imageModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal(event) {
+            if (!event || event.target.id === 'imageModal') {
+                document.getElementById('imageModal').classList.remove('show');
+                document.body.style.overflow = 'auto';
+                currentEventId = null;
+            }
+        }
+
+        async function deleteEvent(id) {
+            if (!confirm('Delete this detection event?')) return;
+            const res = await apiFetch('/api/v1/events/' + id + '/', { method: 'DELETE' });
+            if (res && res.ok) {
+                toast('Detection deleted');
+                loadEvents();
+                loadDashboard();
+            } else {
+                toast('Failed to delete', 'error');
+            }
+        }
+
+        function deleteEventFromModal() {
+            if (currentEventId) {
+                closeImageModal();
+                deleteEvent(currentEventId);
+            }
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeImageModal();
+        });
+</script>
+</body>
+
+</html>

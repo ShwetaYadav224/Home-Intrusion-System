@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcFace Tester — SecureHome</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232733;
+            --border: #2d3142;
+            --text: #e4e6eb;
+            --text2: #8b8fa3;
+            --accent: #6c5ce7;
+            --accent2: #a29bfe;
+            --green: #00b894;
+            --green-bg: rgba(0, 184, 148, .12);
+            --red: #ff6b6b;
+            --red-bg: rgba(255, 107, 107, .12);
+            --orange: #fdcb6e;
+            --blue: #74b9ff;
+            --blue-bg: rgba(116, 185, 255, .12);
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, .4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: rgba(26, 29, 39, .85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .topbar .logo span {
+            color: var(--accent2);
+        }
+
+        .topbar nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .topbar nav a {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: .82rem;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            transition: all .2s;
+        }
+
+        .topbar nav a:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .topbar nav a.active {
+            color: var(--accent2);
+            background: rgba(108, 92, 231, .1);
+        }
+
+        /* ── Main layout ── */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 48px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: var(--text2);
+            font-size: .9rem;
+        }
+
+        /* ── Info banner ── */
+        .info-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--blue-bg);
+            border: 1px solid rgba(116, 185, 255, .2);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            font-size: .85rem;
+            color: var(--blue);
+        }
+
+        .info-banner .icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        /* ── Upload zone ── */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: rgba(108, 92, 231, .04);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(108, 92, 231, .08);
+        }
+
+        .upload-zone .icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .upload-zone h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .upload-zone p {
+            color: var(--text2);
+            font-size: .82rem;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .preview-wrap {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 360px;
+            border-radius: var(--radius);
+            display: none;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        /* ── Button ── */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #5b4bd5);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, .3);
+        }
+
+        .btn-accent:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(108, 92, 231, .4);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ── Loader ── */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 16px;
+            color: var(--accent2);
+            font-size: .9rem;
+            font-weight: 500;
+        }
+
+        .loader .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Result ── */
+        .result-box {
+            display: none;
+            margin-top: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            max-height: 360px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: .82rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+            color: var(--green);
+        }
+
+        .result-box.error {
+            color: var(--red);
+        }
+
+        /* scrollbar */
+        .result-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .result-box::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .result-box::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <a href="/" class="logo">🛡️ Stranger<span>Finder</span></a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/dashboard/">Dashboard</a>
+            <a href="/dashboard/arcface/" class="active">ArcFace</a>
+            <a href="/dashboard/family/">Family</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🧠 ArcFace Endpoint Tester</h1>
+            <p>Test face detection & recognition — simulates what an ESP32-CAM device sends</p>
+        </div>
+
+        <div class="info-banner">
+            <span class="icon">ℹ️</span>
+            <div>This calls the <strong>public</strong> endpoint <code
+                    style="background:rgba(116,185,255,.15);padding:2px 6px;border-radius:4px;">/api/v1/detect/arcface/</code>
+                — no JWT required, just like an ESP32 device.</div>
+        </div>
+
+        <div class="card">
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('imageInput').click()">
+                <span class="icon">📷</span>
+                <h3>Drop an image or click to select</h3>
+                <p>Supports JPG, PNG — face will be detected & identified</p>
+            </div>
+            <input type="file" id="imageInput" accept="image/*">
+            <div class="preview-wrap"><img id="imagePreview" alt="Preview"></div>
+
+            <button id="testBtn" class="btn btn-accent" disabled>
+                🔍 Detect & Identify Face
+            </button>
+
+            <div class="loader" id="loader">
+                <span class="spinner"></span> Processing with ArcFace model…
+            </div>
+
+            <div class="result-box" id="resultBox"></div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const testBtn = document.getElementById('testBtn');
+        const resultBox = document.getElementById('resultBox');
+        const dropZone = document.getElementById('dropZone');
+        const loader = document.getElementById('loader');
+        let base64Image = null;
+
+        imageInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) { imageInput.files = e.dataTransfer.files; handleFile(e.dataTransfer.files[0]); }
+        });
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'inline-block';
+                base64Image = e.target.result.split(',')[1];
+                testBtn.disabled = false;
+                resultBox.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        testBtn.addEventListener('click', async () => {
+            if (!base64Image) return;
+            testBtn.disabled = true;
+            loader.style.display = 'block';
+            resultBox.style.display = 'none';
+            resultBox.classList.remove('error');
+            try {
+                const res = await fetch('/api/v1/detect/arcface/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ deviceId: 'web-dashboard', type: 'manual-test', image: base64Image })
+                });
+                const data = await res.json();
+                if (data.data?.embedding) delete data.data.embedding;
+                resultBox.textContent = JSON.stringify(data, null, 2);
+                resultBox.style.display = 'block';
+                if (!res.ok) resultBox.classList.add('error');
+            } catch (err) {
+                resultBox.textContent = 'Error: ' + err.message;
+                resultBox.classList.add('error');
+                resultBox.style.display = 'block';
+            } finally {
+                testBtn.disabled = false;
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>

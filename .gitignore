@@ -1,0 +1,41 @@
+# Byte-compiled / optimized
+*.pyc
+__pycache__/
+
+# Environment
+.env
+
+# Database
+db.sqlite3
+
+# Static files (collected)
+staticfiles/
+
+# Media uploads
+media/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# uv
+.venv/
+
+# ArcFace model cache
+~/.insightface/
+
+# Old backend subfolder (migrated to root)
+backend/
+
+# Mobile build artifacts
+**/build/
+.dart_tool/
+.flutter-plugins-dependencies

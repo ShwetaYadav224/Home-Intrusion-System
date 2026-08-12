@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+
+# Python
+.venv
+__pycache__
+*.pyc
+*.pyo
+
+# Environment
+.env
+
+# Database (local only)
+db.sqlite3
+
+# Collected static (rebuilt in Docker)
+staticfiles/
+
+# Media uploads (use persistent volume on Render)
+media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Mobile app & ESP32 (not needed in backend image)
+mobile-app/
+esp32/
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

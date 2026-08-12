@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Family — SecureHome</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #232733;
+            --border: #2d3142;
+            --text: #e4e6eb;
+            --text2: #8b8fa3;
+            --accent: #6c5ce7;
+            --accent2: #a29bfe;
+            --green: #00b894;
+            --green-bg: rgba(0, 184, 148, .12);
+            --red: #ff6b6b;
+            --red-bg: rgba(255, 107, 107, .12);
+            --orange: #fdcb6e;
+            --blue: #74b9ff;
+            --blue-bg: rgba(116, 185, 255, .12);
+            --radius: 12px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, .4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: rgba(26, 29, 39, .85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .topbar .logo span {
+            color: var(--accent2);
+        }
+
+        .topbar nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .topbar nav a {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: .82rem;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            transition: all .2s;
+        }
+
+        .topbar nav a:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .topbar nav a.active {
+            color: var(--accent2);
+            background: rgba(108, 92, 231, .1);
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 48px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .page-header p {
+            color: var(--text2);
+            font-size: .9rem;
+        }
+
+        /* ── Auth overlay ── */
+        .auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 40px;
+            width: 400px;
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        .auth-card .logo-big {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .auth-card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 6px;
+        }
+
+        .auth-card .sub {
+            color: var(--text2);
+            font-size: .88rem;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 600;
+            color: var(--text2);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            font-size: .95rem;
+            outline: none;
+            transition: border .2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Upload ── */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .2s;
+            margin-bottom: 16px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--green);
+            background: rgba(0, 184, 148, .04);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--green);
+            background: rgba(0, 184, 148, .08);
+        }
+
+        .upload-zone .icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .upload-zone h3 {
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--green);
+            margin-bottom: 2px;
+        }
+
+        .upload-zone p {
+            color: var(--text2);
+            font-size: .8rem;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .preview-wrap {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        #imagePreview {
+            max-height: 200px;
+            border-radius: var(--radius);
+            display: none;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: .92rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+        }
+
+        .btn-green {
+            background: linear-gradient(135deg, var(--green), #00a381);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0, 184, 148, .25);
+        }
+
+        .btn-green:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 184, 148, .35);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #5b4bd5);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(108, 92, 231, .3);
+        }
+
+        .btn-accent:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid rgba(255, 107, 107, .2);
+            padding: 6px 12px;
+            width: auto;
+            font-size: .78rem;
+            border-radius: 6px;
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 107, 107, .2);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ── Loader & Messages ── */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 14px;
+            color: var(--green);
+            font-size: .88rem;
+        }
+
+        .loader .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid var(--border);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .msg {
+            margin-top: 14px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: .85rem;
+            display: none;
+            font-weight: 500;
+        }
+
+        .msg.success {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid rgba(0, 184, 148, .2);
+        }
+
+        .msg.error {
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid rgba(255, 107, 107, .2);
+        }
+
+        /* ── Person Grid ── */
+        .persons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .person-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            text-align: center;
+            transition: all .2s;
+        }
+
+        .person-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .person-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: var(--bg);
+            display: block;
+        }
+
+        .person-card .info {
+            padding: 12px;
+        }
+
+        .person-card h3 {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .person-card p {
+            color: var(--text2);
+            font-size: .75rem;
+            margin-bottom: 8px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text2);
+        }
+
+        .empty .icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            display: block;
+            opacity: .5;
+        }
+
+        .empty p {
+            font-size: .9rem;
+        }
+
+        /* ── Auth message ── */
+        .auth-msg {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: .85rem;
+            display: none;
+            background: var(--red-bg);
+            color: var(--red);
+            border: 1px solid rgba(255, 107, 107, .2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <a href="/" class="logo">🛡️ Stranger<span>Finder</span></a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/dashboard/">Dashboard</a>
+            <a href="/dashboard/arcface/">ArcFace</a>
+            <a href="/dashboard/family/" class="active">Family</a>
+        </nav>
+    </header>
+
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-card">
+            <div class="logo-big">🔐</div>
+            <h2>Sign In</h2>
+            <div class="sub">Login to manage your family members</div>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="authUser" placeholder="Enter username" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="authPass" placeholder="Enter password" autocomplete="current-password">
+            </div>
+            <button class="btn btn-accent" onclick="doLogin()">Sign In</button>
+            <div class="auth-msg" id="authMsg"></div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContent" style="display:none;">
+        <div class="page-header">
+            <h1>👨‍👩‍👧‍👦 Manage Family Members</h1>
+            <p>Add known persons so the system can recognize family and flag strangers</p>
+        </div>
+
+        <div class="card">
+            <h2>➕ Add Known Person</h2>
+            <div class="form-group">
+                <label>Person's Name</label>
+                <input type="text" id="personName" placeholder="e.g. Mom, John, Alice">
+            </div>
+            <div class="upload-zone" id="dropZone" onclick="document.getElementById('imageInput').click()">
+                <span class="icon">📷</span>
+                <h3>Select or drop a photo</h3>
+                <p>Clear frontal face photo works best for recognition</p>
+            </div>
+            <input type="file" id="imageInput" accept="image/*">
+            <div class="preview-wrap"><img id="imagePreview" alt="Preview"></div>
+
+            <button id="addBtn" class="btn btn-green" disabled>
+                🧠 Extract Face & Add to Database
+            </button>
+            <div class="loader" id="loader"><span class="spinner"></span> Processing ArcFace embedding…</div>
+            <div class="msg" id="messageBox"></div>
+        </div>
+
+        <div class="card">
+            <h2>📚 Known Persons</h2>
+            <div id="personsGrid" class="persons-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        let AT = localStorage.getItem('sf_access') || '';
+        let RT = localStorage.getItem('sf_refresh') || '';
+
+        function authHeaders() { return { 'Authorization': 'Bearer ' + AT, 'Content-Type': 'application/json' }; }
+
+        async function apiFetch(url, opts = {}) {
+            opts.headers = { ...authHeaders(), ...(opts.headers || {}) };
+            let res = await fetch(url, opts);
+            if (res.status === 401 && RT) {
+                const ref = await fetch('/api/v1/auth/token/refresh/', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh: RT })
+                });
+                if (ref.ok) {
+                    const d = await ref.json();
+                    AT = d.data.access; RT = d.data.refresh;
+                    localStorage.setItem('sf_access', AT); localStorage.setItem('sf_refresh', RT);
+                    opts.headers['Authorization'] = 'Bearer ' + AT;
+                    res = await fetch(url, opts);
+                } else { doLogout(); return res; }
+            }
+            return res;
+        }
+
+        function showAuth() { document.getElementById('authOverlay').style.display = 'flex'; document.getElementById('mainContent').style.display = 'none'; }
+        function showMain() { document.getElementById('authOverlay').style.display = 'none'; document.getElementById('mainContent').style.display = 'block'; }
+
+        async function doLogin() {
+            const u = document.getElementById('authUser').value.trim();
+            const p = document.getElementById('authPass').value;
+            if (!u || !p) return;
+            const res = await fetch('/api/v1/auth/login/', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier: u, password: p })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                AT = data.data.tokens.access; RT = data.data.tokens.refresh;
+                localStorage.setItem('sf_access', AT); localStorage.setItem('sf_refresh', RT);
+                showMain(); loadKnownPersons();
+            } else {
+                const el = document.getElementById('authMsg');
+                el.textContent = '❌ ' + (data.message || 'Login failed');
+                el.style.display = 'block';
+            }
+        }
+
+        function doLogout() {
+            apiFetch('/api/v1/auth/logout/', { method: 'POST', body: JSON.stringify({ refresh: RT }) }).catch(() => { });
+            AT = ''; RT = '';
+            localStorage.removeItem('sf_access'); localStorage.removeItem('sf_refresh');
+            showAuth();
+        }
+
+        document.getElementById('authPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+        document.getElementById('authUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('authPass').focus(); });
+
+        (async () => {
+            if (!AT) { showAuth(); return; }
+            const res = await apiFetch('/api/v1/auth/profile/');
+            if (res && res.ok) { showMain(); loadKnownPersons(); }
+            else showAuth();
+        })();
+
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const personName = document.getElementById('personName');
+        const addBtn = document.getElementById('addBtn');
+        const dropZone = document.getElementById('dropZone');
+        const loader = document.getElementById('loader');
+        const messageBox = document.getElementById('messageBox');
+        let base64Image = null;
+
+        imageInput.addEventListener('change', e => handleFile(e.target.files[0]));
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        personName.addEventListener('input', checkForm);
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = e => { imagePreview.src = e.target.result; imagePreview.style.display = 'block'; base64Image = e.target.result.split(',')[1]; checkForm(); };
+            reader.readAsDataURL(file);
+        }
+        function checkForm() { addBtn.disabled = !(personName.value.trim() && base64Image); }
+
+        function showMsg(msg, isError = false) {
+            messageBox.textContent = msg;
+            messageBox.className = 'msg ' + (isError ? 'error' : 'success');
+            messageBox.style.display = 'block';
+            setTimeout(() => messageBox.style.display = 'none', 5000);
+        }
+
+        addBtn.addEventListener('click', async () => {
+            if (!base64Image || !personName.value.trim()) return;
+            addBtn.disabled = true; loader.style.display = 'block'; messageBox.style.display = 'none';
+            try {
+                const res = await apiFetch('/api/v1/known-persons/', {
+                    method: 'POST', body: JSON.stringify({ name: personName.value.trim(), image: base64Image })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showMsg('✅ Added ' + data.data.name + ' successfully!');
+                    personName.value = ''; imagePreview.src = ''; imagePreview.style.display = 'none'; base64Image = null; addBtn.disabled = true;
+                    loadKnownPersons();
+                } else showMsg('❌ ' + data.message, true);
+            } catch (e) { showMsg('❌ ' + e.message, true); }
+            finally { loader.style.display = 'none'; checkForm(); }
+        });
+
+        async function loadKnownPersons() {
+            try {
+                const res = await apiFetch('/api/v1/known-persons/');
+                if (!res || !res.ok) return;
+                const data = await res.json();
+                const grid = document.getElementById('personsGrid');
+                if (!data.data.persons?.length) {
+                    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;"><span class="icon">👤</span><p>No family members added yet</p></div>';
+                    return;
+                }
+                grid.innerHTML = data.data.persons.map(p => {
+                    const photos = p.photos || [];
+                    let imagesHtml = '';
+                    if (photos.length === 0) {
+                        imagesHtml = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=232733&color=a29bfe&size=200&bold=true" alt="${esc(p.name)}">`;
+                    } else {
+                        imagesHtml = `<div style="display:flex; overflow-x:auto; scroll-snap-type: x mandatory; height: 180px; width: 100%;">
+                    ${photos.map(ph => `<div style="flex: 0 0 100%; scroll-snap-align: start; position: relative;">
+                        <img src="${ph.url}?t=${Date.now()}" alt="${esc(p.name)}" style="width: 100%; height: 180px; object-fit: cover;">
+                        <button onclick="deletePersonPhoto(${p.id}, '${ph.id}', '${esc(p.name).replace(/'/g, "\\'")}')" title="Delete Photo" style="position: absolute; top:8px; right:8px; background: rgba(255,107,107,0.8); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold;">✕</button>
+                    </div>`).join('')}
+                </div>`;
+                    }
+
+                    return `<div class="person-card">
+                ${imagesHtml}
+                <div class="info">
+                    <h3>${esc(p.name)}</h3>
+                    <p>Added ${new Date(p.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                    <button class="btn btn-danger" onclick="deletePerson(${p.id},'${p.name.replace(/'/g, "\\'")}')">🗑️ Remove Person</button>
+                </div>
+            </div>`;
+                }).join('');
+            } catch (e) { console.error('Failed to load persons:', e); }
+        }
+
+        async function deletePerson(id, name) {
+            if (!confirm('Remove "' + name + '" from known persons?')) return;
+            try {
+                const res = await apiFetch('/api/v1/known-persons/' + id + '/', { method: 'DELETE' });
+                if (res.ok) { showMsg('🗑️ Removed ' + name); loadKnownPersons(); }
+                else { const d = await res.json(); showMsg('❌ ' + d.message, true); }
+            } catch (e) { showMsg('❌ ' + e.message, true); }
+        }
+
+        async function deletePersonPhoto(personId, photoId, name) {
+            if (!confirm('Delete this photo of "' + name + '"?')) return;
+            try {
+                const res = await apiFetch('/api/v1/known-persons/' + personId + '/photos/' + photoId + '/', { method: 'DELETE' });
+                if (res.ok) { showMsg('🗑️ Photo removed'); loadKnownPersons(); }
+                else { const d = await res.json(); showMsg('❌ ' + d.message, true); }
+            } catch (e) { showMsg('❌ ' + e.message, true); }
+        }
+
+        function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+</script>
+</body>
+
+</html>
