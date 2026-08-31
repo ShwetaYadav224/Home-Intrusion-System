@@ -5,7 +5,7 @@ Home Intrusion System is a Django-based home security platform that connects ESP
 ## Overview
 
 - Backend: Django REST API with JWT authentication
-- AI: ArcFace for face matching and OpenRouter for fallback classification
+- AI: ArcFace for local face matching
 - Clients: Flutter mobile app and web dashboard
 - Edge devices: ESP32 camera firmware for motion and detection events
 - Storage: Local media files stored in `MEDIA_ROOT`
@@ -27,7 +27,7 @@ flowchart TB
         API[Django REST API]
         Auth[Auth & Household Management]
         Security[Devices, Detections, Alerts, Activity Logs]
-        AI[ArcFace + OpenRouter]
+        AI[ArcFace Recognition]
         Storage[Local Media Storage]
         DB[(Database)]
     end
@@ -60,7 +60,6 @@ flowchart TB
 - Django and Django REST Framework
 - SimpleJWT
 - ArcFace / InsightFace
-- OpenRouter vision API
 - Flutter
 
 ## Run Locally
@@ -80,7 +79,6 @@ Required environment values typically include:
 - `DEBUG`
 - `ALLOWED_HOSTS`
 - `DATABASE_URL`
-- `OPENROUTER_API_KEY`
 - `ARCFACE_MODEL_PATH`
 - `MEDIA_ROOT`
 
